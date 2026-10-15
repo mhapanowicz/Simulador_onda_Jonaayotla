@@ -2032,37 +2032,40 @@ const VecinaSimulator = (function() {
         return false;
     }
 
-    // Calcula la atenuación total por paredes exteriores + ventanas + muro divisorio
+    // Calcula la atenuación total por paredes + ventanas
     // que la línea antenna→point sufre al atravesar obstáculos.
     function calculateWallAtten(point) {
         var totalAtten = 0;
         var ant = { x: antenna.x, y: antenna.y };
         var tgt = { x: point.x, y: point.y };
 
-        // --- Muro divisorio ---
-        if (lineIntersectsWall(point)) {
+        var inA_ant = isInStoreA(ant.x, ant.y);
+        var inA_pt  = isInStoreA(tgt.x, tgt.y);
+        var inB_ant = isInStoreB(ant.x, ant.y);
+        var inB_pt  = isInStoreB(tgt.x, tgt.y);
+        var crossesDivisor = lineIntersectsWall(point);
+
+        // --- Caso 1: señal cruza el muro divisorio (de A a B o de B a A) ---
+        // Solo se aplica UNA vez la atenuación del muro (20dB concreto o ventana si cae en una)
+        if (crossesDivisor) {
             totalAtten += WALL_ATTEN_DBM;
         }
 
-        // --- Paredes exteriores de Tienda A ---
-        // Si la antena está dentro de A y el punto fuera de A, la señal sale por una pared de A
-        var inA_ant = isInStoreA(ant.x, ant.y);
-        var inA_pt  = isInStoreA(tgt.x, tgt.y);
-        if (inA_ant && !inA_pt) {
+        // --- Caso 2: señal sale de una tienda hacia el exterior (no cruza el muro, sale por pared exterior) ---
+        // Tienda A → exterior (y no cruza el muro divisorio)
+        if (inA_ant && !inA_pt && !crossesDivisor) {
             totalAtten += wallAttenForExit(storeBoundsA, windowsA, ant, tgt);
         }
-        // Si la antena está fuera de A y el punto dentro de A, la señal entra por una pared de A
-        if (!inA_ant && inA_pt) {
+        // Exterior → Tienda A (y no cruza el muro divisorio)
+        if (!inA_ant && inA_pt && !crossesDivisor) {
             totalAtten += wallAttenForExit(storeBoundsA, windowsA, ant, tgt);
         }
-
-        // --- Paredes exteriores de Tienda B ---
-        var inB_ant = isInStoreB(ant.x, ant.y);
-        var inB_pt  = isInStoreB(tgt.x, tgt.y);
-        if (inB_ant && !inB_pt) {
+        // Tienda B → exterior (y no cruza el muro divisorio)
+        if (inB_ant && !inB_pt && !crossesDivisor) {
             totalAtten += wallAttenForExit(storeBoundsB, windowsB, ant, tgt);
         }
-        if (!inB_ant && inB_pt) {
+        // Exterior → Tienda B (y no cruza el muro divisorio)
+        if (!inB_ant && inB_pt && !crossesDivisor) {
             totalAtten += wallAttenForExit(storeBoundsB, windowsB, ant, tgt);
         }
 
