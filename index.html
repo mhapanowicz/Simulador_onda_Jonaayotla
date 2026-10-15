@@ -1916,15 +1916,15 @@ const VecinaSimulator = (function() {
     var RAW_DBM = -100;
 
     // Ventanas: cada una es un segmento en una pared. La señal que pasa por una ventana se atenúa menos.
-    // Tienda A: 2 ventanas (una en pared izquierda, una en pared superior)
+    // Tienda A: 2 ventanas (una en pared izquierda, una en pared inferior)
     var windowsA = [
-        { wall: 'left',  start: 120, end: 180 },  // Ventana en pared izquierda de Tienda A
-        { wall: 'top',   start: 200, end: 260 }   // Ventana en pared superior de Tienda A
+        { wall: 'left',   start: 120, end: 180 },  // Ventana en pared izquierda de Tienda A
+        { wall: 'bottom', start: 200, end: 260 }   // Ventana en pared inferior de Tienda A
     ];
-    // Tienda B: 2 ventanas (una en pared derecha, una en pared superior)
+    // Tienda B: 2 ventanas (una en pared derecha, una en pared inferior)
     var windowsB = [
-        { wall: 'right', start: 120, end: 180 },  // Ventana en pared derecha de Tienda B
-        { wall: 'top',   start: 200, end: 260 }   // Ventana en pared superior de Tienda B
+        { wall: 'right',  start: 120, end: 180 },  // Ventana en pared derecha de Tienda B
+        { wall: 'bottom', start: 200, end: 260 }   // Ventana en pared inferior de Tienda B
     ];
 
     function initSim() {
@@ -2240,47 +2240,80 @@ const VecinaSimulator = (function() {
         ctx.fillRect(storeBounds.x, storeBounds.y, storeBounds.width, storeBounds.height);
     }
 
-    function drawStoreWalls(storeBounds, label, entranceLabel, windows) {
+    function drawStoreWalls(storeBounds, label, entranceLabel, windows, skipWall) {
         // Store Outer Walls — concreto (mismo material que el muro divisorio)
+        // skipWall: 'right' u 'left' — para no dibujar la pared compartida (muro divisorio)
         ctx.strokeStyle = "#8B7355";
         ctx.lineWidth = storeBounds.wallThickness;
-        ctx.strokeRect(
-            storeBounds.x - storeBounds.wallThickness/2,
-            storeBounds.y - storeBounds.wallThickness/2,
-            storeBounds.width + storeBounds.wallThickness,
-            storeBounds.height + storeBounds.wallThickness
-        );
+
+        // Dibujar paredes individualmente (excepto la que se omite por ser compartida)
+        // Pared superior
+        if (skipWall !== 'top') {
+            ctx.beginPath();
+            ctx.moveTo(storeBounds.x - storeBounds.wallThickness/2, storeBounds.y);
+            ctx.lineTo(storeBounds.x + storeBounds.width + storeBounds.wallThickness/2, storeBounds.y);
+            ctx.stroke();
+        }
+        // Pared inferior
+        if (skipWall !== 'bottom') {
+            ctx.beginPath();
+            ctx.moveTo(storeBounds.x - storeBounds.wallThickness/2, storeBounds.y + storeBounds.height);
+            ctx.lineTo(storeBounds.x + storeBounds.width + storeBounds.wallThickness/2, storeBounds.y + storeBounds.height);
+            ctx.stroke();
+        }
+        // Pared izquierda
+        if (skipWall !== 'left') {
+            ctx.beginPath();
+            ctx.moveTo(storeBounds.x, storeBounds.y - storeBounds.wallThickness/2);
+            ctx.lineTo(storeBounds.x, storeBounds.y + storeBounds.height + storeBounds.wallThickness/2);
+            ctx.stroke();
+        }
+        // Pared derecha
+        if (skipWall !== 'right') {
+            ctx.beginPath();
+            ctx.moveTo(storeBounds.x + storeBounds.width, storeBounds.y - storeBounds.wallThickness/2);
+            ctx.lineTo(storeBounds.x + storeBounds.width, storeBounds.y + storeBounds.height + storeBounds.wallThickness/2);
+            ctx.stroke();
+        }
 
         // Textura de líneas diagonales en las paredes (concreto)
         ctx.strokeStyle = "#6B5B45";
         ctx.lineWidth = 1;
         // Pared superior
+        if (skipWall !== 'top') {
         for (var x = storeBounds.x; x < storeBounds.x + storeBounds.width; x += 8) {
             ctx.beginPath();
             ctx.moveTo(x, storeBounds.y - storeBounds.wallThickness/2);
             ctx.lineTo(x + 8, storeBounds.y + storeBounds.wallThickness/2);
             ctx.stroke();
         }
+        }
         // Pared inferior
+        if (skipWall !== 'bottom') {
         for (var x2 = storeBounds.x; x2 < storeBounds.x + storeBounds.width; x2 += 8) {
             ctx.beginPath();
             ctx.moveTo(x2, storeBounds.y + storeBounds.height - storeBounds.wallThickness/2);
             ctx.lineTo(x2 + 8, storeBounds.y + storeBounds.height + storeBounds.wallThickness/2);
             ctx.stroke();
         }
+        }
         // Pared izquierda
+        if (skipWall !== 'left') {
         for (var y = storeBounds.y; y < storeBounds.y + storeBounds.height; y += 8) {
             ctx.beginPath();
             ctx.moveTo(storeBounds.x - storeBounds.wallThickness/2, y);
             ctx.lineTo(storeBounds.x + storeBounds.wallThickness/2, y + 8);
             ctx.stroke();
         }
+        }
         // Pared derecha
+        if (skipWall !== 'right') {
         for (var y2 = storeBounds.y; y2 < storeBounds.y + storeBounds.height; y2 += 8) {
             ctx.beginPath();
             ctx.moveTo(storeBounds.x + storeBounds.width - storeBounds.wallThickness/2, y2);
             ctx.lineTo(storeBounds.x + storeBounds.width + storeBounds.wallThickness/2, y2 + 8);
             ctx.stroke();
+        }
         }
 
         // Dibujar ventanas (cortar el concreto y poner vidrio)
@@ -2496,8 +2529,8 @@ const VecinaSimulator = (function() {
         ctx.restore();
 
         // 4. Draw store walls + labels ON TOP of waves (so walls are visible)
-        drawStoreWalls(storeBoundsA, "TIENDA A", "ENTRADA", windowsA);
-        drawStoreWalls(storeBoundsB, "TIENDA B (VECINA)", "ENTRADA", windowsB);
+        drawStoreWalls(storeBoundsA, "TIENDA A", "ENTRADA", windowsA, 'right');
+        drawStoreWalls(storeBoundsB, "TIENDA B (VECINA)", "ENTRADA", windowsB, 'left');
 
         // Draw wall
         drawWall();
