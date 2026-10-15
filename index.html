@@ -1001,6 +1001,7 @@
     <img src="https://getin.mx/wp-content/themes/getin-theme/public/images/logo-getin.png" alt="Getin" class="tabs-logo">
     <button class="tab-btn active" onclick="switchTab('rf', event)">Simulador Ondas RF</button>
     <button class="tab-btn" onclick="switchTab('vecina', event)">Tienda Vecina</button>
+    <button class="tab-btn" onclick="switchTab('reduccion', event)">Reducción de Onda</button>
 </nav>
 
 <div class="tab-content active" id="tab-rf">
@@ -1330,6 +1331,135 @@
     </footer>
 </div>
 
+<div class="tab-content" id="tab-reduccion">
+    <div class="sim-hero" style="background: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)), url('https://getin.mx/wp-content/themes/getin-theme/public/images/slider/getin0-min.jpg') center center / cover no-repeat;">
+        <h1>🌧️ Reducción de Onda RF</h1>
+        <p>Visualizá cómo la señal se atenúa por personas, anaqueles, paredes, ventanas y clima. Raw, Paseantes y Visitas en tiempo real.</p>
+    </div>
+
+    <div style="max-width: 1400px; margin: 0 auto; padding: 24px;">
+        <div class="content-card" style="border-left: 4px solid var(--getin-green); margin-bottom: 20px;">
+            <h3 style="font-size: 16px; margin-bottom: 6px; color: var(--getin-green-dark); font-weight: 700;">¿Cómo funciona este simulador?</h3>
+            <p style="font-size: 14px; color: var(--text); line-height: 1.55;">
+                La antena emite 3 ondas: <strong style="color:#2980B9;">Raw</strong> (0 a -100 dBm, visión natural), <strong style="color:#E74C3C;">Paseantes</strong> (rojo, calibrable) y <strong style="color:#2CAD78;">Visitas</strong> (verde, calibrable, siempre ≤ paseantes). Todo afecta a todas las ondas: personas, anaqueles, paredes de concreto (20 dB), ventanas de vidrio (8 dB) y clima. Mové la antena, agregá personas y observá cómo se reducen las burbujas.
+            </p>
+        </div>
+
+        <div class="rf-sim-container" style="grid-template-columns: 1fr 360px;">
+            <div class="canvas-card">
+                <div class="canvas-toolbar">
+                    <div class="tool-group">
+                        <button class="btn btn-primary" id="btn-red-add-person" onclick="ReduccionSimulator.setMode('person')">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="7" r="4"/><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/></svg>
+                            + Agregar Personas
+                        </button>
+                        <button class="btn" id="btn-red-add-shelf" onclick="ReduccionSimulator.setMode('shelf')">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18"/></svg>
+                            + Agregar Anaquel
+                        </button>
+                        <button class="btn btn-danger" onclick="ReduccionSimulator.clearElements()">Limpiar Todo</button>
+                        <button class="btn" id="btn-red-toggle-anim" onclick="ReduccionSimulator.toggleAnimation()">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
+                            ⏸ Pausar
+                        </button>
+                        <button class="btn" id="btn-red-move-antenna" onclick="ReduccionSimulator.setMode('antenna')">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v6m0 10v6m11-11h-6M7 12H1"/></svg>
+                            ✥ Mover Antena
+                        </button>
+                    </div>
+                    <div class="tool-group">
+                        <label style="font-size: 12px; font-weight: 600; color: var(--text-muted);">Escenario:</label>
+                        <select id="preset-select-red" onchange="ReduccionSimulator.loadPreset(this.value)" style="padding: 6px 10px; border-radius: 6px; border: 1px solid #ccc; font-size: 12px;">
+                            <option value="empty">Tienda Vacía</option>
+                            <option value="low">Día Bajo</option>
+                            <option value="average" selected>Día Promedio</option>
+                            <option value="high">Día Alto</option>
+                        </select>
+                    </div>
+                </div>
+
+                <canvas id="reduccionCanvas" width="900" height="600"></canvas>
+
+                <div class="rf-legend-bar">
+                    <div class="rf-legend-item"><div class="rf-legend-color" style="background: rgba(41,128,185,0.3); border: 1px dashed #2980B9;"></div><span>Raw (0 a -100 dBm)</span></div>
+                    <div class="rf-legend-item"><div class="rf-legend-color" style="background: rgba(231,76,60,0.3); border: 1px dashed #E74C3C;"></div><span>Paseantes (rojo)</span></div>
+                    <div class="rf-legend-item"><div class="rf-legend-color" style="background: rgba(44,173,120,0.3); border: 1px dashed #2CAD78;"></div><span>Visitas (verde)</span></div>
+                    <div class="rf-legend-item"><div class="rf-legend-color" style="background: #8B7355; border: 1px solid #5D4E37;"></div><span>Concreto (20 dB)</span></div>
+                    <div class="rf-legend-item"><div class="rf-legend-color" style="background: rgba(135,206,235,0.6); border: 1px solid #5DADE2;"></div><span>Vidrio (8 dB)</span></div>
+                    <div class="rf-legend-item"><div class="rf-legend-color" style="background: #9B59B6;"></div><span>Antena</span></div>
+                </div>
+            </div>
+
+            <div class="rf-sidebar">
+                <div class="rf-card">
+                    <h3>🎛️ Calibración de Potencias</h3>
+                    <div class="control-group">
+                        <div class="control-label">
+                            <span>Potencia Paseantes (dBm)</span>
+                            <span class="value" id="red-paseantes-val">-60</span>
+                        </div>
+                        <input type="range" id="red-paseantes-slider" min="0" max="100" value="60" step="1" oninput="ReduccionSimulator.updatePaseantes(this.value)">
+                        <p style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">Rango: 0 (lejos) a 100 (cerca). Define el umbral de detección de paseantes.</p>
+                    </div>
+                    <div class="control-group">
+                        <div class="control-label">
+                            <span>Potencia Visitas (dBm)</span>
+                            <span class="value" id="red-visitas-val">-70</span>
+                        </div>
+                        <input type="range" id="red-visitas-slider" min="0" max="100" value="70" step="1" oninput="ReduccionSimulator.updateVisitas(this.value)">
+                        <p style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">Siempre ≤ paseantes. Define el umbral de detección de visitas.</p>
+                    </div>
+                </div>
+
+                <div class="rf-card">
+                    <h3>🌤️ Clima</h3>
+                    <div class="control-group">
+                        <div class="control-label"><span>Lluvia</span></div>
+                        <select id="red-lluvia" onchange="ReduccionSimulator.updateClima()" style="width: 100%; padding: 6px 8px; font-size: 0.85rem; border: 1px solid var(--border); border-radius: 4px;">
+                            <option value="0" selected>Sin lluvia (0 dB)</option>
+                            <option value="4">Lluvia media (+4 dB)</option>
+                            <option value="8">Lluvia fuerte (+8 dB)</option>
+                        </select>
+                    </div>
+                    <div class="control-group">
+                        <div class="control-label">
+                            <span>Temperatura (°C)</span>
+                            <span class="value" id="red-temp-val">25°C</span>
+                        </div>
+                        <input type="range" id="red-temp-slider" min="0" max="50" value="25" step="1" oninput="ReduccionSimulator.updateTemperatura(this.value)">
+                        <p style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">Temperatura extrema (>40°C o <0°C) suma +1 dB de atenuación por drift electrónico.</p>
+                    </div>
+                </div>
+
+                <div class="rf-card">
+                    <h3>📊 Lectura de Antena</h3>
+                    <div class="metrics-grid">
+                        <div class="metric-box"><div class="number" id="red-metric-raw" style="color:#2980B9;">0</div><div class="label">Raw</div></div>
+                        <div class="metric-box"><div class="number" id="red-metric-paseantes" style="color:#E74C3C;">0</div><div class="label">Paseantes</div></div>
+                        <div class="metric-box"><div class="number" id="red-metric-visitas" style="color:#2CAD78;">0</div><div class="label">Visitas</div></div>
+                    </div>
+                    <div style="margin-top: 16px; text-align: center;">
+                        <span id="red-status-badge" class="badge badge-green">CALIBRACIÓN OK</span>
+                    </div>
+                </div>
+
+                <div class="rf-card">
+                    <h3>ℹ️ Info</h3>
+                    <p style="font-size: 12.5px; color: var(--text-muted); line-height: 1.5;">
+                        Cada persona atenúa <strong>2.8 dB</strong>, cada anaquel <strong>5 dB</strong>. Las paredes de concreto <strong>20 dB</strong> y las ventanas <strong>8 dB</strong>. La lluvia suma atenuación global. La antena es movible: clic en "Mover Antena" y arrastrá.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <img src="https://getin.mx/wp-content/themes/getin-theme/public/images/logo-getin.png" alt="Getin" class="footer-logo">
+        <p>GetIn · Medición e Inteligencia de Retail</p>
+        <p>¿Dudas? Tu gerente de cuenta está para ayudarte.</p>
+    </footer>
+</div>
+
 <script>
 // --- GLOBAL TAB SWITCHER ---
 function switchTab(tabId, event) {
@@ -1348,6 +1478,9 @@ function switchTab(tabId, event) {
     }
     if (tabId === 'vecina') {
         VecinaSimulator.initSim();
+    }
+    if (tabId === 'reduccion') {
+        ReduccionSimulator.initSim();
     }
 }
 
@@ -2739,6 +2872,457 @@ const VecinaSimulator = (function() {
         toggleAnimation: toggleAnimation
     };
 })();
+
+// --- MODULE 3: REDUCCIÓN DE ONDA SIMULATOR ---
+const ReduccionSimulator = (function() {
+    var canvas, ctx;
+    var mode = 'person';
+    var people = [];
+    var shelves = [];
+    var wavePhase = 0;
+    var isDragging = false;
+    var draggedPerson = null;
+    var isDraggingAntenna = false;
+    var isAnimRunning = false;
+    var isPaused = false;
+
+    var antenna = { x: 300, y: 320 };
+
+    // Tiendas más pequeñas (vista dron alejada)
+    var storeA = { x: 150, y: 200, width: 280, height: 220, wallThickness: 10 };
+    var storeB = { x: 470, y: 200, width: 280, height: 220, wallThickness: 10 };
+    var wallX1 = 430, wallX2 = 445;
+    var WALL_ATTEN = 20;
+    var WINDOW_ATTEN = 8;
+
+    var windowsA = [
+        { wall: 'left',   start: 260, end: 310 },
+        { wall: 'bottom', start: 250, end: 300 }
+    ];
+    var windowsB = [
+        { wall: 'right',  start: 260, end: 310 },
+        { wall: 'bottom', start: 570, end: 620 }
+    ];
+
+    var paseantesPotencia = 60;
+    var visitasPotencia = 70;
+    var lluviaAtten = 0;
+    var tempAtten = 0;
+
+    function initSim() {
+        canvas = document.getElementById('reduccionCanvas');
+        if (!canvas) return;
+        ctx = canvas.getContext('2d');
+        loadPreset('average');
+        setupCanvasEvents();
+        if (!isAnimRunning) { isAnimRunning = true; animate(); }
+    }
+
+    function setMode(newMode) {
+        mode = newMode;
+        var btnP = document.getElementById('btn-red-add-person');
+        var btnS = document.getElementById('btn-red-add-shelf');
+        var btnA = document.getElementById('btn-red-move-antenna');
+        if (btnP) btnP.className = mode === 'person' ? 'btn btn-primary' : 'btn';
+        if (btnS) btnS.className = mode === 'shelf' ? 'btn btn-primary' : 'btn';
+        if (btnA) btnA.className = mode === 'antenna' ? 'btn btn-primary' : 'btn';
+    }
+
+    function updatePaseantes(val) {
+        paseantesPotencia = parseInt(val);
+        var el = document.getElementById('red-paseantes-val');
+        if (el) el.innerText = '-' + paseantesPotencia;
+        if (visitasPotencia < paseantesPotencia) {
+            visitasPotencia = paseantesPotencia;
+            var vSlider = document.getElementById('red-visitas-slider');
+            var vVal = document.getElementById('red-visitas-val');
+            if (vSlider) vSlider.value = visitasPotencia;
+            if (vVal) vVal.innerText = '-' + visitasPotencia;
+        }
+        var vSlider2 = document.getElementById('red-visitas-slider');
+        if (vSlider2) vSlider2.max = paseantesPotencia;
+    }
+
+    function updateVisitas(val) {
+        visitasPotencia = Math.min(parseInt(val), paseantesPotencia);
+        var el = document.getElementById('red-visitas-val');
+        if (el) el.innerText = '-' + visitasPotencia;
+        var vSlider = document.getElementById('red-visitas-slider');
+        if (vSlider) vSlider.value = visitasPotencia;
+    }
+
+    function updateClima() {
+        var sel = document.getElementById('red-lluvia');
+        if (sel) lluviaAtten = parseInt(sel.value);
+    }
+
+    function updateTemperatura(val) {
+        var temp = parseInt(val);
+        var el = document.getElementById('red-temp-val');
+        if (el) el.innerText = temp + '\u00b0C';
+        tempAtten = (temp > 40 || temp < 0) ? 1 : 0;
+    }
+
+    function clearElements() { people = []; shelves = []; }
+
+    function loadPreset(type) {
+        people = [];
+        shelves = [
+            { x: 200, y: 240, w: 120, h: 20 },
+            { x: 200, y: 320, w: 120, h: 20 },
+            { x: 520, y: 240, w: 120, h: 20 },
+            { x: 520, y: 320, w: 120, h: 20 }
+        ];
+        if (type === 'empty') {
+        } else if (type === 'low') {
+            people.push({x:250,y:280},{x:320,y:350},{x:570,y:280},{x:630,y:350});
+            people.push({x:100,y:150},{x:800,y:150},{x:450,y:100});
+        } else if (type === 'average') {
+            for (var i=0;i<8;i++) people.push({x:170+Math.random()*230,y:220+Math.random()*180});
+            for (var i2=0;i2<6;i2++) people.push({x:490+Math.random()*230,y:220+Math.random()*180});
+            for (var i3=0;i3<8;i3++) people.push({x:50+Math.random()*850,y:50+Math.random()*140});
+            for (var i4=0;i4<5;i4++) people.push({x:50+Math.random()*850,y:460+Math.random()*120});
+        } else if (type === 'high') {
+            for (var i=0;i<25;i++) people.push({x:170+Math.random()*230,y:220+Math.random()*180});
+            for (var i2=0;i2<20;i2++) people.push({x:490+Math.random()*230,y:220+Math.random()*180});
+            for (var i3=0;i3<20;i3++) people.push({x:50+Math.random()*850,y:50+Math.random()*140});
+            for (var i4=0;i4<15;i4++) people.push({x:50+Math.random()*850,y:460+Math.random()*120});
+        }
+    }
+
+    function isInStoreA(x,y) { return x>=storeA.x && x<=storeA.x+storeA.width && y>=storeA.y && y<=storeA.y+storeA.height; }
+    function isInStoreB(x,y) { return x>=storeB.x && x<=storeB.x+storeB.width && y>=storeB.y && y<=storeB.y+storeB.height; }
+
+    function potenciaToDbm(p) { return -p; }
+
+    function pathLossAt(dist) {
+        if (dist < 5) return 0;
+        if (dist <= 600) return 14.5 * Math.log10(dist);
+        var t = (dist - 600) / 500;
+        return 14.5 * Math.log10(600) + t * 60;
+    }
+
+    function calcAtten(x, y) {
+        var ant = {x:antenna.x, y:antenna.y};
+        var tgt = {x:x, y:y};
+        var total = lluviaAtten + tempAtten;
+
+        people.forEach(function(p) {
+            var d = pointToSegmentDistance(p, ant, tgt);
+            if (d < 18) total += 2.8;
+        });
+        shelves.forEach(function(s) {
+            if (lineIntersectsRect(ant, tgt, s)) total += 5.0;
+        });
+
+        var inA_ant = isInStoreA(ant.x, ant.y);
+        var inA_pt = isInStoreA(tgt.x, tgt.y);
+        var inB_ant = isInStoreB(ant.x, ant.y);
+        var inB_pt = isInStoreB(tgt.x, tgt.y);
+        var crossesDiv = (ant.x < wallX1 && tgt.x > wallX2) || (ant.x > wallX2 && tgt.x < wallX1);
+
+        if (crossesDiv) {
+            total += WALL_ATTEN;
+        } else {
+            if (inA_ant && !inA_pt) total += wallAttenForExit(storeA, windowsA, ant, tgt);
+            if (!inA_ant && inA_pt) total += wallAttenForExit(storeA, windowsA, ant, tgt);
+            if (inB_ant && !inB_pt) total += wallAttenForExit(storeB, windowsB, ant, tgt);
+            if (!inB_ant && inB_pt) total += wallAttenForExit(storeB, windowsB, ant, tgt);
+        }
+        return total;
+    }
+
+    function wallAttenForExit(bounds, windows, ant, tgt) {
+        if ((ant.x<=bounds.x && tgt.x>=bounds.x)||(ant.x>=bounds.x && tgt.x<=bounds.x)) {
+            var t=(bounds.x-ant.x)/(tgt.x-ant.x); var cy=ant.y+t*(tgt.y-ant.y);
+            if (cy>=bounds.y && cy<=bounds.y+bounds.height) return passesThroughWindow(windows,'left',cy)?WINDOW_ATTEN:WALL_ATTEN;
+        }
+        if ((ant.x<=bounds.x+bounds.width && tgt.x>=bounds.x+bounds.width)||(ant.x>=bounds.x+bounds.width && tgt.x<=bounds.x+bounds.width)) {
+            var t2=((bounds.x+bounds.width)-ant.x)/(tgt.x-ant.x); var cy2=ant.y+t2*(tgt.y-ant.y);
+            if (cy2>=bounds.y && cy2<=bounds.y+bounds.height) return passesThroughWindow(windows,'right',cy2)?WINDOW_ATTEN:WALL_ATTEN;
+        }
+        if ((ant.y<=bounds.y && tgt.y>=bounds.y)||(ant.y>=bounds.y && tgt.y<=bounds.y)) {
+            var t3=(bounds.y-ant.y)/(tgt.y-ant.y); var cx=ant.x+t3*(tgt.x-ant.x);
+            if (cx>=bounds.x && cx<=bounds.x+bounds.width) return passesThroughWindow(windows,'top',cx)?WINDOW_ATTEN:WALL_ATTEN;
+        }
+        if ((ant.y<=bounds.y+bounds.height && tgt.y>=bounds.y+bounds.height)||(ant.y>=bounds.y+bounds.height && tgt.y<=bounds.y+bounds.height)) {
+            var t4=((bounds.y+bounds.height)-ant.y)/(tgt.y-ant.y); var cx2=ant.x+t4*(tgt.x-ant.x);
+            if (cx2>=bounds.x && cx2<=bounds.x+bounds.width) return passesThroughWindow(windows,'bottom',cx2)?WINDOW_ATTEN:WALL_ATTEN;
+        }
+        return 0;
+    }
+
+    function passesThroughWindow(windows, wall, pos) {
+        for (var i=0;i<windows.length;i++) { if (windows[i].wall===wall && pos>=windows[i].start && pos<=windows[i].end) return true; }
+        return false;
+    }
+
+    function signalAt(x, y) {
+        var dist = Math.hypot(x-antenna.x, y-antenna.y);
+        if (dist < 5) return 0;
+        return -pathLossAt(dist) - calcAtten(x, y);
+    }
+
+    function getWaveRadius(thresholdDbm) {
+        var targetPl = -thresholdDbm;
+        if (targetPl <= 0) return 5;
+        if (targetPl <= 14.5 * Math.log10(600)) return Math.pow(10, targetPl/14.5);
+        var t = (targetPl - 14.5*Math.log10(600)) / 60;
+        return 600 + t * 500;
+    }
+
+    function pointToSegmentDistance(p, a, b) {
+        var l2 = Math.hypot(a.x-b.x, a.y-b.y);
+        if (l2 === 0) return Math.hypot(p.x-a.x, p.y-a.y);
+        var t = ((p.x-a.x)*(b.x-a.x)+(p.y-a.y)*(b.y-a.y))/(l2*l2);
+        t = Math.max(0, Math.min(1, t));
+        return Math.hypot(p.x-(a.x+t*(b.x-a.x)), p.y-(a.y+t*(b.y-a.y)));
+    }
+
+    function lineIntersectsRect(p1, p2, r) {
+        var lines = [[{x:r.x,y:r.y},{x:r.x+r.w,y:r.y}],[{x:r.x+r.w,y:r.y},{x:r.x+r.w,y:r.y+r.h}],[{x:r.x+r.w,y:r.y+r.h},{x:r.x,y:r.y+r.h}],[{x:r.x,y:r.y+r.h},{x:r.x,y:r.y}]];
+        return lines.some(function(l) { return linesIntersect(p1,p2,l[0],l[1]); });
+    }
+
+    function linesIntersect(a,b,c,d) {
+        var ccw = function(p1,p2,p3) { return (p3.y-p1.y)*(p2.x-p1.x) > (p2.y-p1.y)*(p3.x-p1.x); };
+        return (ccw(a,c,d)!==ccw(b,c,d)) && (ccw(a,b,c)!==ccw(a,b,d));
+    }
+
+    function animate() {
+        if (!isPaused) wavePhase = (wavePhase + 0.3) % 40;
+        var tab = document.getElementById('tab-reduccion');
+        if (tab && tab.classList.contains('active')) drawSim();
+        requestAnimationFrame(animate);
+    }
+
+    function toggleAnimation() {
+        isPaused = !isPaused;
+        var btn = document.getElementById('btn-red-toggle-anim');
+        if (btn) {
+            if (isPaused) { btn.innerHTML = '\u25b6 Reanudar'; btn.className = 'btn'; }
+            else { btn.innerHTML = '\u23f8 Pausar'; btn.className = 'btn'; }
+        }
+    }
+
+    function drawSim() {
+        if (!ctx) return;
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = '#F0F0F2';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        var rawDbm = -100;
+        var paseantesDbm = potenciaToDbm(paseantesPotencia);
+        var visitasDbm = potenciaToDbm(visitasPotencia);
+        var rawRadius = getWaveRadius(rawDbm);
+        var paseantesRadius = getWaveRadius(paseantesDbm);
+        var visitasRadius = getWaveRadius(visitasDbm);
+
+        ctx.fillStyle = '#FFFFFF';
+        ctx.fillRect(storeA.x, storeA.y, storeA.width, storeA.height);
+        ctx.fillRect(storeB.x, storeB.y, storeB.width, storeB.height);
+
+        var gridSize = 16;
+        for (var x=0; x<canvas.width; x+=gridSize) {
+            for (var y=0; y<canvas.height; y+=gridSize) {
+                var cx=x+gridSize/2, cy=y+gridSize/2;
+                var sig = signalAt(cx, cy);
+                if (sig >= visitasDbm) ctx.fillStyle = 'rgba(44,173,120,0.18)';
+                else if (sig >= paseantesDbm) ctx.fillStyle = 'rgba(231,76,60,0.15)';
+                else if (sig >= rawDbm) ctx.fillStyle = 'rgba(41,128,185,0.10)';
+                else ctx.fillStyle = 'rgba(220,224,230,0.15)';
+                ctx.fillRect(x, y, gridSize, gridSize);
+            }
+        }
+
+        drawWave(rawRadius, 'rgba(41,128,185,0.5)', [6,10], 'Raw -100 dBm', -Math.PI/4);
+        drawWave(paseantesRadius, 'rgba(231,76,60,0.5)', [8,8], 'Paseantes '+paseantesDbm+' dBm', Math.PI/4);
+        drawWave(visitasRadius, 'rgba(44,173,120,0.5)', [10,6], 'Visitas '+visitasDbm+' dBm', 0);
+
+        drawWalls(storeA, 'TIENDA A', windowsA, 'right');
+        drawWalls(storeB, 'TIENDA B', windowsB, 'left');
+        drawDividingWall();
+
+        ctx.fillStyle = '#34495E';
+        shelves.forEach(function(s) {
+            ctx.fillRect(s.x, s.y, s.w, s.h);
+            ctx.strokeStyle = '#2C3E50'; ctx.strokeRect(s.x, s.y, s.w, s.h);
+            ctx.fillStyle = '#FFFFFF'; ctx.font = '9px sans-serif'; ctx.textAlign = 'center';
+            ctx.fillText('ANAQUEL', s.x+s.w/2, s.y+s.h/2+3);
+            ctx.fillStyle = '#34495E';
+        });
+
+        ctx.save();
+        ctx.fillStyle = '#9B59B6';
+        ctx.beginPath(); ctx.arc(antenna.x, antenna.y, 10, 0, Math.PI*2); ctx.fill();
+        ctx.strokeStyle = '#9B59B6'; ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.arc(antenna.x, antenna.y, 14+Math.sin(Date.now()/200)*3, 0, Math.PI*2); ctx.stroke();
+        ctx.fillStyle = '#FFFFFF'; ctx.font = 'bold 8px sans-serif'; ctx.textAlign = 'center';
+        ctx.fillText('ANT', antenna.x, antenna.y+3);
+        ctx.restore();
+
+        var rawCount=0, paseantesCount=0, visitasCount=0;
+        people.forEach(function(p) {
+            var sig = signalAt(p.x, p.y);
+            var inVis = sig >= visitasDbm;
+            var inPas = sig >= paseantesDbm && !inVis;
+            var inRaw = sig >= rawDbm && !inPas && !inVis;
+            if (inVis) visitasCount++;
+            else if (inPas) paseantesCount++;
+            else if (inRaw) rawCount++;
+
+            var color, icon;
+            if (inVis) { color = '#2CAD78'; icon = 'V'; }
+            else if (inPas) { color = '#E74C3C'; icon = 'P'; }
+            else if (inRaw) { color = '#F39C12'; icon = 'R'; }
+            else { color = '#95A5A6'; icon = '\u2717'; }
+
+            ctx.beginPath(); ctx.arc(p.x, p.y, 12, 0, Math.PI*2);
+            ctx.fillStyle = color + '33'; ctx.fill();
+            ctx.beginPath(); ctx.arc(p.x, p.y, 7, 0, Math.PI*2);
+            ctx.fillStyle = color; ctx.fill();
+            ctx.fillStyle = '#FFFFFF'; ctx.font = 'bold 7px sans-serif'; ctx.textAlign = 'center';
+            ctx.fillText(icon, p.x, p.y+2);
+        });
+
+        var mRaw = document.getElementById('red-metric-raw');
+        var mPas = document.getElementById('red-metric-paseantes');
+        var mVis = document.getElementById('red-metric-visitas');
+        var badge = document.getElementById('red-status-badge');
+        if (mRaw) mRaw.innerText = rawCount;
+        if (mPas) mPas.innerText = paseantesCount;
+        if (mVis) mVis.innerText = visitasCount;
+        if (badge) {
+            if (visitasPotencia > paseantesPotencia) { badge.innerText = 'VISITAS > PASEANTES (INVALIDO)'; badge.className = 'badge badge-red'; }
+            else { badge.innerText = 'CALIBRACION OK'; badge.className = 'badge badge-green'; }
+        }
+    }
+
+    function drawWave(radius, strokeColor, dash, label, labelAngle) {
+        radius = Math.max(5, radius);
+        ctx.save();
+        ctx.beginPath(); ctx.arc(antenna.x, antenna.y, radius, 0, Math.PI*2);
+        ctx.strokeStyle = strokeColor; ctx.lineWidth = 2;
+        ctx.setLineDash([4,4]); ctx.stroke(); ctx.setLineDash([]);
+        for (var r=wavePhase; r<radius; r+=40) {
+            var intensity = Math.max(0, 1-r/radius);
+            ctx.beginPath(); ctx.arc(antenna.x, antenna.y, r, 0, Math.PI*2);
+            ctx.strokeStyle = strokeColor.replace(/[\d\.]+\)$/, (intensity*0.3)+')');
+            ctx.lineWidth = 1.5; ctx.setLineDash(dash); ctx.stroke(); ctx.setLineDash([]);
+        }
+        var lx = antenna.x + Math.cos(labelAngle)*radius;
+        var ly = antenna.y + Math.sin(labelAngle)*radius;
+        ctx.fillStyle = 'rgba(255,255,255,0.85)';
+        var lw = ctx.measureText(label).width;
+        ctx.fillRect(lx-lw/2-4, ly-16, lw+8, 14);
+        ctx.fillStyle = strokeColor.replace(/[\d\.]+\)$/, '1)');
+        ctx.font = 'bold 10px sans-serif'; ctx.textAlign = 'center';
+        ctx.fillText(label, lx, ly-6);
+        ctx.restore();
+    }
+
+    function drawWalls(bounds, label, windows, skipWall) {
+        ctx.strokeStyle = '#8B7355'; ctx.lineWidth = bounds.wallThickness;
+        if (skipWall!=='top') { ctx.beginPath(); ctx.moveTo(bounds.x-bounds.wallThickness/2, bounds.y); ctx.lineTo(bounds.x+bounds.width+bounds.wallThickness/2, bounds.y); ctx.stroke(); }
+        if (skipWall!=='bottom') { ctx.beginPath(); ctx.moveTo(bounds.x-bounds.wallThickness/2, bounds.y+bounds.height); ctx.lineTo(bounds.x+bounds.width+bounds.wallThickness/2, bounds.y+bounds.height); ctx.stroke(); }
+        if (skipWall!=='left') { ctx.beginPath(); ctx.moveTo(bounds.x, bounds.y-bounds.wallThickness/2); ctx.lineTo(bounds.x, bounds.y+bounds.height+bounds.wallThickness/2); ctx.stroke(); }
+        if (skipWall!=='right') { ctx.beginPath(); ctx.moveTo(bounds.x+bounds.width, bounds.y-bounds.wallThickness/2); ctx.lineTo(bounds.x+bounds.width, bounds.y+bounds.height+bounds.wallThickness/2); ctx.stroke(); }
+
+        ctx.strokeStyle = '#6B5B45'; ctx.lineWidth = 1;
+        if (skipWall!=='top') for (var x=bounds.x; x<bounds.x+bounds.width; x+=8) { ctx.beginPath(); ctx.moveTo(x, bounds.y-bounds.wallThickness/2); ctx.lineTo(x+8, bounds.y+bounds.wallThickness/2); ctx.stroke(); }
+        if (skipWall!=='bottom') for (var x2=bounds.x; x2<bounds.x+bounds.width; x2+=8) { ctx.beginPath(); ctx.moveTo(x2, bounds.y+bounds.height-bounds.wallThickness/2); ctx.lineTo(x2+8, bounds.y+bounds.height+bounds.wallThickness/2); ctx.stroke(); }
+        if (skipWall!=='left') for (var y=bounds.y; y<bounds.y+bounds.height; y+=8) { ctx.beginPath(); ctx.moveTo(bounds.x-bounds.wallThickness/2, y); ctx.lineTo(bounds.x+bounds.wallThickness/2, y+8); ctx.stroke(); }
+        if (skipWall!=='right') for (var y2=bounds.y; y2<bounds.y+bounds.height; y2+=8) { ctx.beginPath(); ctx.moveTo(bounds.x+bounds.width-bounds.wallThickness/2, y2); ctx.lineTo(bounds.x+bounds.width+bounds.wallThickness/2, y2+8); ctx.stroke(); }
+
+        if (windows) {
+            windows.forEach(function(win) {
+                ctx.save();
+                if (win.wall==='left') {
+                    ctx.clearRect(bounds.x-bounds.wallThickness/2-1, win.start, bounds.wallThickness+2, win.end-win.start);
+                    ctx.fillStyle='rgba(135,206,235,0.6)'; ctx.fillRect(bounds.x-bounds.wallThickness/2, win.start, bounds.wallThickness, win.end-win.start);
+                    ctx.strokeStyle='#5DADE2'; ctx.lineWidth=1.5; ctx.strokeRect(bounds.x-bounds.wallThickness/2, win.start, bounds.wallThickness, win.end-win.start);
+                } else if (win.wall==='right') {
+                    ctx.clearRect(bounds.x+bounds.width-bounds.wallThickness/2-1, win.start, bounds.wallThickness+2, win.end-win.start);
+                    ctx.fillStyle='rgba(135,206,235,0.6)'; ctx.fillRect(bounds.x+bounds.width-bounds.wallThickness/2, win.start, bounds.wallThickness, win.end-win.start);
+                    ctx.strokeStyle='#5DADE2'; ctx.lineWidth=1.5; ctx.strokeRect(bounds.x+bounds.width-bounds.wallThickness/2, win.start, bounds.wallThickness, win.end-win.start);
+                } else if (win.wall==='bottom') {
+                    ctx.clearRect(win.start, bounds.y+bounds.height-bounds.wallThickness/2-1, win.end-win.start, bounds.wallThickness+2);
+                    ctx.fillStyle='rgba(135,206,235,0.6)'; ctx.fillRect(win.start, bounds.y+bounds.height-bounds.wallThickness/2, win.end-win.start, bounds.wallThickness);
+                    ctx.strokeStyle='#5DADE2'; ctx.lineWidth=1.5; ctx.strokeRect(win.start, bounds.y+bounds.height-bounds.wallThickness/2, win.end-win.start, bounds.wallThickness);
+                } else if (win.wall==='top') {
+                    ctx.clearRect(win.start, bounds.y-bounds.wallThickness/2-1, win.end-win.start, bounds.wallThickness+2);
+                    ctx.fillStyle='rgba(135,206,235,0.6)'; ctx.fillRect(win.start, bounds.y-bounds.wallThickness/2, win.end-win.start, bounds.wallThickness);
+                    ctx.strokeStyle='#5DADE2'; ctx.lineWidth=1.5; ctx.strokeRect(win.start, bounds.y-bounds.wallThickness/2, win.end-win.start, bounds.wallThickness);
+                }
+                ctx.fillStyle='#2980B9'; ctx.font='bold 6px sans-serif'; ctx.textAlign='center';
+                if (win.wall==='left') { ctx.save(); ctx.translate(bounds.x-bounds.wallThickness/2-6, (win.start+win.end)/2); ctx.rotate(-Math.PI/2); ctx.fillText('VENTANA',0,0); ctx.restore(); }
+                else if (win.wall==='right') { ctx.save(); ctx.translate(bounds.x+bounds.width+bounds.wallThickness/2+6, (win.start+win.end)/2); ctx.rotate(-Math.PI/2); ctx.fillText('VENTANA',0,0); ctx.restore(); }
+                else if (win.wall==='bottom') { ctx.fillText('VENTANA', (win.start+win.end)/2, bounds.y+bounds.height+bounds.wallThickness/2+10); }
+                else if (win.wall==='top') { ctx.fillText('VENTANA', (win.start+win.end)/2, bounds.y-bounds.wallThickness/2-6); }
+                ctx.restore();
+            });
+        }
+        ctx.fillStyle='#2C3E50'; ctx.font='bold 11px sans-serif'; ctx.textAlign='center';
+        ctx.fillText(label, bounds.x+bounds.width/2, bounds.y-16);
+    }
+
+    function drawDividingWall() {
+        ctx.save();
+        ctx.fillStyle = '#8B7355';
+        ctx.fillRect(wallX1, storeA.y, wallX2-wallX1, storeA.height);
+        ctx.strokeStyle = '#6B5B45'; ctx.lineWidth = 1;
+        for (var y=storeA.y; y<storeA.y+storeA.height; y+=8) { ctx.beginPath(); ctx.moveTo(wallX1, y); ctx.lineTo(wallX2, y+8); ctx.stroke(); }
+        ctx.strokeStyle = '#5D4E37'; ctx.lineWidth = 2;
+        ctx.strokeRect(wallX1, storeA.y, wallX2-wallX1, storeA.height);
+        ctx.fillStyle = '#FFFFFF'; ctx.font = 'bold 7px sans-serif'; ctx.textAlign = 'center';
+        ctx.save(); ctx.translate((wallX1+wallX2)/2, storeA.y+storeA.height/2); ctx.rotate(-Math.PI/2);
+        ctx.fillText('MURO CONCRETO', 0, 3); ctx.restore();
+        ctx.restore();
+    }
+
+    function setupCanvasEvents() {
+        if (!canvas) return;
+        var getPos = function(e) {
+            var rect = canvas.getBoundingClientRect();
+            var sx = canvas.width/rect.width, sy = canvas.height/rect.height;
+            var cx = e.touches ? e.touches[0].clientX : e.clientX;
+            var cy = e.touches ? e.touches[0].clientY : e.clientY;
+            return { x: (cx-rect.left)*sx, y: (cy-rect.top)*sy };
+        };
+        var handleDown = function(e) {
+            var pos = getPos(e);
+            if (mode === 'antenna') {
+                if (Math.hypot(pos.x-antenna.x, pos.y-antenna.y) < 20) isDraggingAntenna = true;
+                else { antenna.x = pos.x; antenna.y = pos.y; }
+                return;
+            }
+            var hit = people.findIndex(function(p) { return Math.hypot(p.x-pos.x, p.y-pos.y) < 14; });
+            if (hit !== -1) { draggedPerson = hit; isDragging = true; return; }
+            if (mode === 'person') people.push({x:pos.x, y:pos.y});
+            else if (mode === 'shelf') shelves.push({x:pos.x-40, y:pos.y-12, w:80, h:24});
+        };
+        var handleMove = function(e) {
+            var pos = getPos(e);
+            if (isDraggingAntenna) { antenna.x = Math.max(10, Math.min(canvas.width-10, pos.x)); antenna.y = Math.max(10, Math.min(canvas.height-10, pos.y)); return; }
+            if (isDragging && draggedPerson !== null) { people[draggedPerson].x = pos.x; people[draggedPerson].y = pos.y; }
+        };
+        var handleUp = function() { isDragging = false; draggedPerson = null; isDraggingAntenna = false; };
+
+        canvas.addEventListener('mousedown', handleDown);
+        canvas.addEventListener('mousemove', handleMove);
+        canvas.addEventListener('mouseup', handleUp);
+        canvas.addEventListener('touchstart', function(e) { e.preventDefault(); handleDown(e); }, {passive:false});
+        canvas.addEventListener('touchmove', function(e) { e.preventDefault(); handleMove(e); }, {passive:false});
+        canvas.addEventListener('touchend', handleUp);
+    }
+
+    return {
+        initSim: initSim, setMode: setMode, updatePaseantes: updatePaseantes,
+        updateVisitas: updateVisitas, updateClima: updateClima, updateTemperatura: updateTemperatura,
+        clearElements: clearElements, loadPreset: loadPreset, toggleAnimation: toggleAnimation
+    };
+})();
+
 
 // Initialize on page load
 window.addEventListener('load', () => {
