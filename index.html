@@ -1166,7 +1166,7 @@
         <div class="content-card" style="border-left: 4px solid var(--getin-green);">
             <h3 style="font-size: 16px; margin-bottom: 6px; color: var(--getin-green-dark); font-weight: 700;">¿Qué muestra esta simulación?</h3>
             <p style="font-size: 14px; color: var(--text); line-height: 1.55;">
-                Esta simulación muestra dos tiendas pegadas separadas por un muro de concreto de 15cm. La antena está en la Tienda A (izquierda). El muro atenúa ~20 dBm a TODAS las señales que lo atraviesan (incluyendo la visión natural/raw). Con una calibración correcta, las personas de la Tienda B no se cuentan como visitas. Si el umbral es muy bajo, los dispositivos de la tienda vecina pueden registrarse como visitas falsas (contaminación cruzada).
+                Esta simulación muestra dos tiendas pegadas separadas por un muro de concreto de 15cm. <strong>Todas las paredes son de concreto</strong> (20 dBm atenuación). Cada tienda tiene <strong>2 ventanas de vidrio</strong> (8 dBm atenuación) que dejan pasar más señal que el concreto. La antena está en la Tienda A (izquierda). Con una calibración correcta, las personas de la Tienda B no se cuentan como visitas. Si el umbral es muy bajo, los dispositivos de la tienda vecina pueden registrarse como visitas falsas (contaminación cruzada) a través de las ventanas.
             </p>
         </div>
 
@@ -1231,7 +1231,11 @@
                     </div>
                     <div class="rf-legend-item">
                         <div class="rf-legend-color" style="background: #8B7355; border: 1px solid #5D4E37;"></div>
-                        <span>🟫 Muro de Concreto (15cm, ~20 dBm atenuación)</span>
+                        <span>🟫 Pared de Concreto (20 dBm atenuación)</span>
+                    </div>
+                    <div class="rf-legend-item">
+                        <div class="rf-legend-color" style="background: rgba(135, 206, 235, 0.6); border: 1px solid #5DADE2;"></div>
+                        <span>🪟 Ventana de Vidrio (8 dBm atenuación)</span>
                     </div>
                 </div>
             </div>
@@ -1312,7 +1316,7 @@
                         ¿Cómo funciona el muro?
                     </h3>
                     <p style="font-size: 12.5px; color: var(--text-muted); line-height: 1.5;">
-                        El muro de concreto de 15cm entre ambas tiendas aporta <strong>20 dBm de atenuación</strong> a todas las señales que lo atraviesan. Esto afecta tanto la visión natural (raw) como la calibración de visitas. A diferencia de los anaqueles (que solo afectan visitas), el muro reduce TODA la señal.
+                        El muro de concreto de 15cm entre ambas tiendas y las paredes exteriores de concreto aportan <strong>20 dBm de atenuación</strong> a todas las señales que las atraviesan. Las <strong>ventanas de vidrio</strong> (2 por tienda) atenúan solo <strong>8 dBm</strong>, permitiendo que parte de la señal escape o entre. Esto afecta tanto la visión natural (raw) como la calibración de visitas.
                     </p>
                 </div>
             </div>
@@ -1902,13 +1906,26 @@ const VecinaSimulator = (function() {
     var isAnimRunning = false;
     var isPaused = false;
 
-    var storeBoundsA = { x: 40, y: 40, width: 440, height: 440, wallThickness: 8 };
-    var storeBoundsB = { x: 480, y: 40, width: 440, height: 440, wallThickness: 8 };
+    var storeBoundsA = { x: 40, y: 40, width: 440, height: 440, wallThickness: 12 };
+    var storeBoundsB = { x: 480, y: 40, width: 440, height: 440, wallThickness: 12 };
     var wallX1 = 460, wallX2 = 475; // Muro de concreto de 15cm (~15px)
     var cashierZoneA = { x: 320, y: 380, width: 120, height: 80 };
     var cashierZoneB = { x: 540, y: 380, width: 120, height: 80 };
-    var WALL_ATTEN_DBM = 20;
+    var WALL_ATTEN_DBM = 20;      // Atenuación muro de concreto
+    var WINDOW_ATTEN_DBM = 8;     // Atenuación ventana de vidrio (menor que concreto)
     var RAW_DBM = -100;
+
+    // Ventanas: cada una es un segmento en una pared. La señal que pasa por una ventana se atenúa menos.
+    // Tienda A: 2 ventanas (una en pared izquierda, una en pared superior)
+    var windowsA = [
+        { wall: 'left',  start: 120, end: 180 },  // Ventana en pared izquierda de Tienda A
+        { wall: 'top',   start: 200, end: 260 }   // Ventana en pared superior de Tienda A
+    ];
+    // Tienda B: 2 ventanas (una en pared derecha, una en pared superior)
+    var windowsB = [
+        { wall: 'right', start: 120, end: 180 },  // Ventana en pared derecha de Tienda B
+        { wall: 'top',   start: 200, end: 260 }   // Ventana en pared superior de Tienda B
+    ];
 
     function initSim() {
         canvas = document.getElementById('vecinaCanvas');
@@ -2007,14 +2024,103 @@ const VecinaSimulator = (function() {
         return isInStoreA(x, y) || isInStoreB(x, y);
     }
 
-    // Detecta si la línea antenna→point atraviesa el muro (x entre wallX1 y wallX2)
+    // Detecta si la línea antenna→point atraviesa el muro divisorio (x entre wallX1 y wallX2)
     function lineIntersectsWall(point) {
-        // La antena está en tienda A (x < wallX1), si el punto está en tienda B (x > wallX2)
-        // la línea necesariamente cruza el muro
         if (antenna.x < wallX1 && point.x > wallX2) return true;
         if (antenna.x > wallX2 && point.x < wallX1) return true;
-        // Si el punto está dentro del muro mismo
         if (point.x >= wallX1 && point.x <= wallX2) return true;
+        return false;
+    }
+
+    // Calcula la atenuación total por paredes exteriores + ventanas + muro divisorio
+    // que la línea antenna→point sufre al atravesar obstáculos.
+    function calculateWallAtten(point) {
+        var totalAtten = 0;
+        var ant = { x: antenna.x, y: antenna.y };
+        var tgt = { x: point.x, y: point.y };
+
+        // --- Muro divisorio ---
+        if (lineIntersectsWall(point)) {
+            totalAtten += WALL_ATTEN_DBM;
+        }
+
+        // --- Paredes exteriores de Tienda A ---
+        // Si la antena está dentro de A y el punto fuera de A, la señal sale por una pared de A
+        var inA_ant = isInStoreA(ant.x, ant.y);
+        var inA_pt  = isInStoreA(tgt.x, tgt.y);
+        if (inA_ant && !inA_pt) {
+            totalAtten += wallAttenForExit(storeBoundsA, windowsA, ant, tgt);
+        }
+        // Si la antena está fuera de A y el punto dentro de A, la señal entra por una pared de A
+        if (!inA_ant && inA_pt) {
+            totalAtten += wallAttenForExit(storeBoundsA, windowsA, ant, tgt);
+        }
+
+        // --- Paredes exteriores de Tienda B ---
+        var inB_ant = isInStoreB(ant.x, ant.y);
+        var inB_pt  = isInStoreB(tgt.x, tgt.y);
+        if (inB_ant && !inB_pt) {
+            totalAtten += wallAttenForExit(storeBoundsB, windowsB, ant, tgt);
+        }
+        if (!inB_ant && inB_pt) {
+            totalAtten += wallAttenForExit(storeBoundsB, windowsB, ant, tgt);
+        }
+
+        return totalAtten;
+    }
+
+    // Calcula la atenuación al salir/entrar por una pared de una tienda,
+    // considerando ventanas (menor atenuación) vs concreto (atenuación completa).
+    function wallAttenForExit(bounds, windows, ant, tgt) {
+        // Determinar por qué pared sale/entra la línea
+        // Pared izquierda (x = bounds.x)
+        if ((ant.x <= bounds.x && tgt.x >= bounds.x) || (ant.x >= bounds.x && tgt.x <= bounds.x)) {
+            // Calcular y donde la línea cruza x = bounds.x
+            var t = (bounds.x - ant.x) / (tgt.x - ant.x);
+            var crossY = ant.y + t * (tgt.y - ant.y);
+            if (crossY >= bounds.y && crossY <= bounds.y + bounds.height) {
+                // ¿Cruza por una ventana en la pared izquierda?
+                if (passesThroughWindow(windows, 'left', crossY)) return WINDOW_ATTEN_DBM;
+                return WALL_ATTEN_DBM;
+            }
+        }
+        // Pared derecha (x = bounds.x + bounds.width)
+        if ((ant.x <= bounds.x + bounds.width && tgt.x >= bounds.x + bounds.width) || (ant.x >= bounds.x + bounds.width && tgt.x <= bounds.x + bounds.width)) {
+            var t2 = ((bounds.x + bounds.width) - ant.x) / (tgt.x - ant.x);
+            var crossY2 = ant.y + t2 * (tgt.y - ant.y);
+            if (crossY2 >= bounds.y && crossY2 <= bounds.y + bounds.height) {
+                if (passesThroughWindow(windows, 'right', crossY2)) return WINDOW_ATTEN_DBM;
+                return WALL_ATTEN_DBM;
+            }
+        }
+        // Pared superior (y = bounds.y)
+        if ((ant.y <= bounds.y && tgt.y >= bounds.y) || (ant.y >= bounds.y && tgt.y <= bounds.y)) {
+            var t3 = (bounds.y - ant.y) / (tgt.y - ant.y);
+            var crossX = ant.x + t3 * (tgt.x - ant.x);
+            if (crossX >= bounds.x && crossX <= bounds.x + bounds.width) {
+                if (passesThroughWindow(windows, 'top', crossX)) return WINDOW_ATTEN_DBM;
+                return WALL_ATTEN_DBM;
+            }
+        }
+        // Pared inferior (y = bounds.y + bounds.height)
+        if ((ant.y <= bounds.y + bounds.height && tgt.y >= bounds.y + bounds.height) || (ant.y >= bounds.y + bounds.height && tgt.y <= bounds.y + bounds.height)) {
+            var t4 = ((bounds.y + bounds.height) - ant.y) / (tgt.y - ant.y);
+            var crossX2 = ant.x + t4 * (tgt.x - ant.x);
+            if (crossX2 >= bounds.x && crossX2 <= bounds.x + bounds.width) {
+                if (passesThroughWindow(windows, 'bottom', crossX2)) return WINDOW_ATTEN_DBM;
+                return WALL_ATTEN_DBM;
+            }
+        }
+        return 0;
+    }
+
+    // Verifica si un punto de cruce en una pared cae dentro de una ventana
+    function passesThroughWindow(windows, wall, pos) {
+        for (var i = 0; i < windows.length; i++) {
+            if (windows[i].wall === wall && pos >= windows[i].start && pos <= windows[i].end) {
+                return true;
+            }
+        }
         return false;
     }
 
@@ -2056,13 +2162,13 @@ const VecinaSimulator = (function() {
             if (lineIntersectsRect(antenna, {x, y}, s)) shelfAtten += 5.0;
         });
 
-        let wallAtten = lineIntersectsWall({x, y}) ? WALL_ATTEN_DBM : 0;
+        let wallAtten = calculateWallAtten({x, y});
 
         let rxSignal = -pathLoss - waterAtten - shelfAtten - wallAtten;
         return Math.max(-90, Math.min(-20, rxSignal));
     }
 
-    // Señal RAW con atenuación por muro (el raw ya NO es inmune al muro)
+    // Señal RAW con atenuación por muro + paredes exteriores + ventanas
     function calculateRawSignalAtVecina(x, y) {
         const dist = Math.hypot(x - antenna.x, y - antenna.y);
         if (dist < 5) return 0;
@@ -2075,7 +2181,7 @@ const VecinaSimulator = (function() {
             pathLoss = 14.5 * Math.log10(600) + t * 60;
         }
 
-        let wallAtten = lineIntersectsWall({x, y}) ? WALL_ATTEN_DBM : 0;
+        let wallAtten = calculateWallAtten({x, y});
         let rxSignal = -pathLoss - wallAtten;
         return Math.max(-100, Math.min(0, rxSignal));
     }
@@ -2134,11 +2240,9 @@ const VecinaSimulator = (function() {
         ctx.fillRect(storeBounds.x, storeBounds.y, storeBounds.width, storeBounds.height);
     }
 
-    function drawStoreWalls(storeBounds, label, entranceLabel) {
-        // Store Outer Walls (drawn on top of heatmap + waves)
-
-        // Store Outer Walls
-        ctx.strokeStyle = "#2C3E50";
+    function drawStoreWalls(storeBounds, label, entranceLabel, windows) {
+        // Store Outer Walls — concreto (mismo material que el muro divisorio)
+        ctx.strokeStyle = "#8B7355";
         ctx.lineWidth = storeBounds.wallThickness;
         ctx.strokeRect(
             storeBounds.x - storeBounds.wallThickness/2,
@@ -2147,20 +2251,112 @@ const VecinaSimulator = (function() {
             storeBounds.height + storeBounds.wallThickness
         );
 
+        // Textura de líneas diagonales en las paredes (concreto)
+        ctx.strokeStyle = "#6B5B45";
+        ctx.lineWidth = 1;
+        // Pared superior
+        for (var x = storeBounds.x; x < storeBounds.x + storeBounds.width; x += 8) {
+            ctx.beginPath();
+            ctx.moveTo(x, storeBounds.y - storeBounds.wallThickness/2);
+            ctx.lineTo(x + 8, storeBounds.y + storeBounds.wallThickness/2);
+            ctx.stroke();
+        }
+        // Pared inferior
+        for (var x2 = storeBounds.x; x2 < storeBounds.x + storeBounds.width; x2 += 8) {
+            ctx.beginPath();
+            ctx.moveTo(x2, storeBounds.y + storeBounds.height - storeBounds.wallThickness/2);
+            ctx.lineTo(x2 + 8, storeBounds.y + storeBounds.height + storeBounds.wallThickness/2);
+            ctx.stroke();
+        }
+        // Pared izquierda
+        for (var y = storeBounds.y; y < storeBounds.y + storeBounds.height; y += 8) {
+            ctx.beginPath();
+            ctx.moveTo(storeBounds.x - storeBounds.wallThickness/2, y);
+            ctx.lineTo(storeBounds.x + storeBounds.wallThickness/2, y + 8);
+            ctx.stroke();
+        }
+        // Pared derecha
+        for (var y2 = storeBounds.y; y2 < storeBounds.y + storeBounds.height; y2 += 8) {
+            ctx.beginPath();
+            ctx.moveTo(storeBounds.x + storeBounds.width - storeBounds.wallThickness/2, y2);
+            ctx.lineTo(storeBounds.x + storeBounds.width + storeBounds.wallThickness/2, y2 + 8);
+            ctx.stroke();
+        }
+
+        // Dibujar ventanas (cortar el concreto y poner vidrio)
+        if (windows) {
+            windows.forEach(function(win) {
+                ctx.save();
+                if (win.wall === 'left') {
+                    // Limpiar concreto en la zona de la ventana
+                    ctx.clearRect(storeBounds.x - storeBounds.wallThickness/2 - 1, win.start, storeBounds.wallThickness + 2, win.end - win.start);
+                    // Dibujar vidrio (azul semitransparente)
+                    ctx.fillStyle = "rgba(135, 206, 235, 0.6)";
+                    ctx.fillRect(storeBounds.x - storeBounds.wallThickness/2, win.start, storeBounds.wallThickness, win.end - win.start);
+                    ctx.strokeStyle = "#5DADE2";
+                    ctx.lineWidth = 1.5;
+                    ctx.strokeRect(storeBounds.x - storeBounds.wallThickness/2, win.start, storeBounds.wallThickness, win.end - win.start);
+                } else if (win.wall === 'right') {
+                    ctx.clearRect(storeBounds.x + storeBounds.width - storeBounds.wallThickness/2 - 1, win.start, storeBounds.wallThickness + 2, win.end - win.start);
+                    ctx.fillStyle = "rgba(135, 206, 235, 0.6)";
+                    ctx.fillRect(storeBounds.x + storeBounds.width - storeBounds.wallThickness/2, win.start, storeBounds.wallThickness, win.end - win.start);
+                    ctx.strokeStyle = "#5DADE2";
+                    ctx.lineWidth = 1.5;
+                    ctx.strokeRect(storeBounds.x + storeBounds.width - storeBounds.wallThickness/2, win.start, storeBounds.wallThickness, win.end - win.start);
+                } else if (win.wall === 'top') {
+                    ctx.clearRect(win.start, storeBounds.y - storeBounds.wallThickness/2 - 1, win.end - win.start, storeBounds.wallThickness + 2);
+                    ctx.fillStyle = "rgba(135, 206, 235, 0.6)";
+                    ctx.fillRect(win.start, storeBounds.y - storeBounds.wallThickness/2, win.end - win.start, storeBounds.wallThickness);
+                    ctx.strokeStyle = "#5DADE2";
+                    ctx.lineWidth = 1.5;
+                    ctx.strokeRect(win.start, storeBounds.y - storeBounds.wallThickness/2, win.end - win.start, storeBounds.wallThickness);
+                } else if (win.wall === 'bottom') {
+                    ctx.clearRect(win.start, storeBounds.y + storeBounds.height - storeBounds.wallThickness/2 - 1, win.end - win.start, storeBounds.wallThickness + 2);
+                    ctx.fillStyle = "rgba(135, 206, 235, 0.6)";
+                    ctx.fillRect(win.start, storeBounds.y + storeBounds.height - storeBounds.wallThickness/2, win.end - win.start, storeBounds.wallThickness);
+                    ctx.strokeStyle = "#5DADE2";
+                    ctx.lineWidth = 1.5;
+                    ctx.strokeRect(win.start, storeBounds.y + storeBounds.height - storeBounds.wallThickness/2, win.end - win.start, storeBounds.wallThickness);
+                }
+                // Etiqueta "VENTANA"
+                ctx.fillStyle = "#2980B9";
+                ctx.font = "bold 7px sans-serif";
+                ctx.textAlign = "center";
+                if (win.wall === 'left') {
+                    ctx.save();
+                    ctx.translate(storeBounds.x - storeBounds.wallThickness/2 - 8, (win.start + win.end) / 2);
+                    ctx.rotate(-Math.PI / 2);
+                    ctx.fillText("VENTANA", 0, 0);
+                    ctx.restore();
+                } else if (win.wall === 'right') {
+                    ctx.save();
+                    ctx.translate(storeBounds.x + storeBounds.width + storeBounds.wallThickness/2 + 8, (win.start + win.end) / 2);
+                    ctx.rotate(-Math.PI / 2);
+                    ctx.fillText("VENTANA", 0, 0);
+                    ctx.restore();
+                } else if (win.wall === 'top') {
+                    ctx.fillText("VENTANA", (win.start + win.end) / 2, storeBounds.y - storeBounds.wallThickness/2 - 6);
+                } else if (win.wall === 'bottom') {
+                    ctx.fillText("VENTANA", (win.start + win.end) / 2, storeBounds.y + storeBounds.height + storeBounds.wallThickness/2 + 12);
+                }
+                ctx.restore();
+            });
+        }
+
         // Store label
         ctx.fillStyle = "#2C3E50";
         ctx.font = "bold 13px sans-serif";
         ctx.textAlign = "center";
-        ctx.fillText(label, storeBounds.x + storeBounds.width/2, storeBounds.y - 12);
+        ctx.fillText(label, storeBounds.x + storeBounds.width/2, storeBounds.y - 20);
 
-        // Entrance
+        // Entrance (gap in the top wall)
         ctx.clearRect(storeBounds.x + 60, storeBounds.y - storeBounds.wallThickness, 140, storeBounds.wallThickness + 2);
         ctx.strokeStyle = "#2CAD78";
         ctx.lineWidth = 2;
         ctx.strokeRect(storeBounds.x + 60, storeBounds.y - 2, 140, 4);
         ctx.fillStyle = "#2CAD78";
         ctx.font = "bold 10px sans-serif";
-        ctx.fillText(entranceLabel, storeBounds.x + 130, storeBounds.y - 20);
+        ctx.fillText(entranceLabel, storeBounds.x + 130, storeBounds.y - 26);
     }
 
     function drawCashierZone(zone) {
@@ -2300,8 +2496,8 @@ const VecinaSimulator = (function() {
         ctx.restore();
 
         // 4. Draw store walls + labels ON TOP of waves (so walls are visible)
-        drawStoreWalls(storeBoundsA, "TIENDA A", "ENTRADA");
-        drawStoreWalls(storeBoundsB, "TIENDA B (VECINA)", "ENTRADA");
+        drawStoreWalls(storeBoundsA, "TIENDA A", "ENTRADA", windowsA);
+        drawStoreWalls(storeBoundsB, "TIENDA B (VECINA)", "ENTRADA", windowsB);
 
         // Draw wall
         drawWall();
