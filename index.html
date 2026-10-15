@@ -1,0 +1,2517 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GetIn · Material de Apoyo y Simuladores</title>
+    <style>
+        :root {
+            --getin-green: #2CAD78;
+            --getin-green-dark: #1E8A5C;
+            --getin-green-light: #E8F5EE;
+            --bg: #ffffff;
+            --nav-bg: #F8F8F8;
+            --text: #333333;
+            --text-muted: #777777;
+            --border: #EEEEEE;
+            --footer-bg: #000000;
+            --warning-red: #E74C3C;
+            --warning-orange: #F39C12;
+            --accent-blue: #2980B9;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.7;
+        }
+
+        /* Navigation Bar & Tabs */
+        .tabs {
+            background: var(--nav-bg);
+            border-bottom: 1px solid var(--border);
+            position: sticky;
+            top: 0;
+            z-index: 200;
+            display: flex;
+            align-items: center;
+            padding: 0 24px;
+            overflow-x: auto;
+        }
+
+        .tabs-logo {
+            height: 30px;
+            width: auto;
+            margin-right: 24px;
+            flex-shrink: 0;
+        }
+
+        .tab-btn {
+            background: none;
+            border: none;
+            border-bottom: 3px solid transparent;
+            padding: 16px 20px;
+            font-family: inherit;
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: color 0.2s, border-color 0.2s;
+            white-space: nowrap;
+        }
+
+        .tab-btn:hover { color: var(--text); }
+
+        .tab-btn.active {
+            color: var(--getin-green);
+            border-bottom-color: var(--getin-green);
+        }
+
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        .hero {
+            position: relative;
+            overflow: hidden;
+            padding: 80px 24px 70px;
+            text-align: center;
+        }
+
+        .hero-bg {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)),
+                        url('https://getin.mx/wp-content/themes/getin-theme/public/images/slider/IMAGEN_REPORTE_SEMESTRAL_2026.jpg') center center / cover no-repeat;
+            z-index: 0;
+        }
+
+        .hero-content { position: relative; z-index: 2; max-width: 600px; margin: 0 auto; }
+        .hero h1 { color: #fff; font-size: 2.2rem; font-weight: 600; margin-bottom: 14px; }
+        .hero p { color: rgba(255,255,255,0.9); font-size: 1.1rem; margin: 0 auto; }
+        .hero-badge {
+            display: inline-block; background: var(--getin-green); color: #fff;
+            font-size: 0.75rem; font-weight: 600; text-transform: uppercase;
+            letter-spacing: 1px; padding: 5px 16px; border-radius: 4px; margin-bottom: 20px;
+        }
+
+        .container { max-width: 760px; margin: 0 auto; padding: 48px 24px 60px; }
+
+        .img-section { position: relative; overflow: hidden; border-radius: 12px; margin-bottom: 40px; }
+        .img-bg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-position: center; background-size: cover; z-index: 0; }
+        .img-overlay-dark { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(rgba(0,0,0,0.55), rgba(0,0,0,0.55)); z-index: 1; }
+        .img-overlay-light { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.90); z-index: 1; }
+        .img-section-content { position: relative; z-index: 2; padding: 36px 28px; }
+
+        .img-section.dark .img-section-content h2 { color: #fff; border-bottom-color: var(--getin-green); }
+        .img-section.dark .img-section-content p { color: rgba(255,255,255,0.9); }
+        .img-section.dark .img-section-content strong { color: #fff; }
+        .img-section.dark .img-section-content ul li { color: rgba(255,255,255,0.85); }
+        .img-section.dark .highlight { background: rgba(44,173,120,0.15); }
+        .img-section.dark .highlight p { color: #fff; }
+        .img-section.dark .highlight p strong { color: var(--getin-green); }
+
+        .section { margin-bottom: 40px; padding: 0 4px; }
+        .section h2, .img-section-content h2 {
+            color: var(--text); font-size: 1.4rem; font-weight: 600;
+            margin-bottom: 16px; padding-bottom: 10px;
+            border-bottom: 3px solid var(--getin-green); display: inline-block;
+        }
+        .section p, .img-section-content p { color: var(--text-muted); font-size: 1.05rem; margin-bottom: 14px; }
+        .section strong, .img-section-content strong { color: var(--text); font-weight: 600; }
+        .section ul, .img-section-content ul { list-style: none; padding-left: 0; margin-top: 12px; }
+        .section ul li, .img-section-content ul li { padding-left: 28px; position: relative; margin-bottom: 14px; color: var(--text-muted); font-size: 1.05rem; }
+        .section ul li::before, .img-section-content ul li::before { content: "▸"; position: absolute; left: 0; color: var(--getin-green); font-weight: bold; }
+
+        .highlight { background: var(--getin-green-light); border-left: 4px solid var(--getin-green); border-radius: 4px; padding: 18px 22px; margin: 20px 0; }
+        .highlight p { color: var(--text); margin-bottom: 0; font-size: 1.05rem; }
+        .highlight p strong { color: var(--getin-green-dark); }
+        .divider { height: 1px; background: var(--border); margin: 40px 0; }
+
+        /* Guía Nav Index */
+        .guia-nav {
+            position: sticky;
+            top: 57px;
+            z-index: 150;
+            background: #fff;
+            border-bottom: 1px solid var(--border);
+            padding: 12px 24px;
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            flex-wrap: wrap;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+        }
+        .guia-nav a {
+            display: inline-block;
+            padding: 6px 16px;
+            border-radius: 20px;
+            background: var(--getin-green-light);
+            color: var(--getin-green-dark);
+            font-size: 0.82rem;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+        .guia-nav a:hover {
+            background: var(--getin-green);
+            color: #fff;
+        }
+
+        /* Guía section anchor offset */
+        .guia-anchor { scroll-margin-top: 120px; }
+
+        /* === NUEVO LAYOUT GUÍA === */
+        .guia-container {
+            max-width: 960px;
+            margin: 0 auto;
+            padding: 0 24px;
+        }
+
+        /* Sección alternada de 2 columnas */
+        .guia-row {
+            display: flex;
+            align-items: center;
+            gap: 40px;
+            margin-bottom: 0;
+            padding: 56px 0;
+            border-bottom: 1px solid var(--border);
+        }
+        .guia-row:last-of-type { border-bottom: none; }
+
+        .guia-row .guia-text {
+            flex: 1 1 52%;
+            min-width: 0;
+        }
+        .guia-row .guia-visual {
+            flex: 1 1 44%;
+            min-width: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* Alternar orden: filas impares con visual a la derecha, pares a la izquierda */
+        .guia-row.reverse .guia-text { order: 2; }
+        .guia-row.reverse .guia-visual { order: 1; }
+
+        .guia-text h2 {
+            color: var(--text);
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 14px;
+            line-height: 1.3;
+        }
+        .guia-text p {
+            color: var(--text-muted);
+            font-size: 1.08rem;
+            margin-bottom: 12px;
+            line-height: 1.8;
+        }
+        .guia-text strong { color: var(--text); font-weight: 600; }
+        .guia-text ul {
+            list-style: none;
+            padding-left: 0;
+            margin-top: 14px;
+        }
+        .guia-text ul li {
+            padding-left: 28px;
+            position: relative;
+            margin-bottom: 12px;
+            color: var(--text-muted);
+            font-size: 1.02rem;
+            line-height: 1.6;
+        }
+        .guia-text ul li::before {
+            content: "✅";
+            position: absolute;
+            left: 0;
+            font-size: 0.9rem;
+        }
+        .guia-text ul li.no-check::before { content: "⚠️"; }
+
+        .guia-highlight {
+            background: var(--getin-green-light);
+            border-left: 4px solid var(--getin-green);
+            border-radius: 4px;
+            padding: 16px 20px;
+            margin: 16px 0 0;
+        }
+        .guia-highlight p {
+            color: var(--text);
+            margin-bottom: 0;
+            font-size: 1.02rem;
+        }
+        .guia-highlight p strong { color: var(--getin-green-dark); }
+
+        /* Visual: imagen circular con borde verde */
+        .guia-img-circle {
+            width: 280px;
+            height: 280px;
+            border-radius: 50%;
+            background-size: cover;
+            background-position: center;
+            border: 6px solid var(--getin-green);
+            box-shadow: 0 8px 28px rgba(0,0,0,0.10);
+            flex-shrink: 0;
+        }
+        .guia-img-rounded {
+            width: 100%;
+            max-width: 360px;
+            height: 240px;
+            border-radius: 16px;
+            background-size: cover;
+            background-position: center;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.08);
+            flex-shrink: 0;
+        }
+
+        /* Visual: tarjeta con número grande */
+        .guia-stat-visual {
+            text-align: center;
+            padding: 24px;
+        }
+        .guia-stat-visual .big-num {
+            font-size: 3.5rem;
+            font-weight: 800;
+            color: var(--getin-green);
+            line-height: 1;
+            margin-bottom: 8px;
+        }
+        .guia-stat-visual .big-num-label {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* Visual: comparación paseantes vs visitas */
+        .guia-compare {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            justify-content: center;
+        }
+        .guia-compare-item {
+            text-align: center;
+        }
+        .guia-compare-item .circle {
+            width: 90px; height: 90px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            margin-bottom: 8px;
+        }
+        .guia-compare-item .label {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+        .guia-compare-item .circle.red {
+            background: rgba(214,48,49,0.12);
+            border: 3px solid rgba(214,48,49,0.3);
+        }
+        .guia-compare-item .circle.blue {
+            background: rgba(9,132,227,0.12);
+            border: 3px solid rgba(9,132,227,0.3);
+        }
+        .guia-compare .arrow {
+            font-size: 1.8rem;
+            color: var(--getin-green);
+            font-weight: 700;
+        }
+
+        /* === ANIMACIÓN PERSONA CAMINANDO === */
+        .walker-scene {
+            position: relative;
+            width: 200px;
+            height: 200px;
+            display: flex;
+            justify-content: center;
+            align-items: flex-end;
+            overflow: hidden;
+        }
+        .walker-scene .ground {
+            position: absolute;
+            bottom: 20px;
+            left: 10%;
+            right: 10%;
+            height: 3px;
+            background: var(--getin-green);
+            border-radius: 2px;
+            opacity: 0.5;
+        }
+        .walker-scene .ground::before,
+        .walker-scene .ground::after {
+            content: "";
+            position: absolute;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--getin-green);
+            border-radius: 2px;
+            opacity: 0.3;
+        }
+        .walker-scene .ground::before { left: -120%; }
+        .walker-scene .ground::after { left: 120%; }
+
+        .walker {
+            position: relative;
+            width: 60px;
+            height: 120px;
+            animation: walkerBob 0.6s ease-in-out infinite alternate;
+        }
+        .walker .head {
+            width: 28px; height: 28px;
+            border-radius: 50%;
+            background: var(--getin-green);
+            margin: 0 auto;
+            position: relative;
+        }
+        .walker .head::after {
+            content: "";
+            position: absolute;
+            top: 6px; left: -4px;
+            width: 36px; height: 16px;
+            border-radius: 50%;
+            background: var(--getin-green-dark);
+            opacity: 0.7;
+        }
+        .walker .body {
+            width: 24px; height: 36px;
+            background: var(--getin-green);
+            margin: 4px auto 0;
+            border-radius: 12px 12px 8px 8px;
+        }
+        .walker .arm {
+            position: absolute;
+            width: 8px; height: 30px;
+            background: var(--getin-green);
+            border-radius: 4px;
+            top: 36px;
+        }
+        .walker .arm.left {
+            left: 14px;
+            transform-origin: top center;
+            animation: armSwingA 0.6s ease-in-out infinite alternate;
+        }
+        .walker .arm.right {
+            right: 14px;
+            transform-origin: top center;
+            animation: armSwingB 0.6s ease-in-out infinite alternate;
+        }
+        .walker .leg {
+            position: absolute;
+            width: 10px; height: 34px;
+            background: var(--getin-green-dark);
+            border-radius: 4px;
+            top: 76px;
+        }
+        .walker .leg.left {
+            left: 20px;
+            transform-origin: top center;
+            animation: legSwingA 0.6s ease-in-out infinite alternate;
+        }
+        .walker .leg.right {
+            right: 20px;
+            transform-origin: top center;
+            animation: legSwingB 0.6s ease-in-out infinite alternate;
+        }
+        .walker .leg::after {
+            content: "";
+            position: absolute;
+            bottom: -4px; left: -3px;
+            width: 16px; height: 8px;
+            background: #333;
+            border-radius: 4px 4px 2px 2px;
+        }
+
+        @keyframes walkerBob {
+            from { transform: translateY(0); }
+            to { transform: translateY(-4px); }
+        }
+        @keyframes armSwingA {
+            from { transform: rotate(20deg); }
+            to { transform: rotate(-20deg); }
+        }
+        @keyframes armSwingB {
+            from { transform: rotate(-20deg); }
+            to { transform: rotate(20deg); }
+        }
+        @keyframes legSwingA {
+            from { transform: rotate(15deg); }
+            to { transform: rotate(-15deg); }
+        }
+        @keyframes legSwingB {
+            from { transform: rotate(-15deg); }
+            to { transform: rotate(15deg); }
+        }
+
+        /* Walker con label flotante */
+        .walker-label {
+            position: absolute;
+            bottom: -8px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--getin-green);
+            color: #fff;
+            font-size: 0.72rem;
+            font-weight: 700;
+            padding: 3px 12px;
+            border-radius: 12px;
+            white-space: nowrap;
+        }
+
+        /* Badge emoji decorativo */
+        .guia-emoji-badge {
+            display: inline-block;
+            font-size: 1.8rem;
+            margin-bottom: 8px;
+        }
+
+        /* Logo GetIn flotante en guía */
+        .guia-logo-strip {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 24px 24px 8px;
+            background: #fff;
+        }
+        .guia-logo-strip img {
+            height: 40px;
+            width: auto;
+        }
+
+        /* Grid de logos de clientes */
+        .guia-clients {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+            padding: 16px 0;
+        }
+        .guia-clients img {
+            height: 48px;
+            width: auto;
+            border-radius: 8px;
+            object-fit: contain;
+            filter: grayscale(0.3);
+            transition: filter 0.2s;
+        }
+        .guia-clients img:hover { filter: grayscale(0); }
+
+        /* Imagen redondeada grande (para hero visual) */
+        .guia-img-large {
+            width: 100%;
+            max-width: 380px;
+            height: 260px;
+            border-radius: 16px;
+            background-size: cover;
+            background-position: center;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.10);
+            flex-shrink: 0;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .guia-row { flex-direction: column; gap: 24px; padding: 36px 0; }
+            .guia-row.reverse .guia-text { order: 1; }
+            .guia-row.reverse .guia-visual { order: 2; }
+            .guia-img-circle { width: 200px; height: 200px; }
+            .guia-img-rounded { max-width: 100%; height: 180px; }
+            .guia-img-large { max-width: 100%; height: 200px; }
+            .guia-clients img { height: 36px; }
+        }
+
+        .sim-hero {
+            background: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)),
+                        url('https://getin.mx/wp-content/themes/getin-theme/public/images/slider/getin2-min.jpg') center center / cover no-repeat;
+            padding: 60px 24px 50px;
+            text-align: center;
+        }
+
+        .sim-hero h1 { color: #fff; font-size: 2rem; font-weight: 600; margin-bottom: 10px; }
+        .sim-hero p { color: rgba(255,255,255,0.9); font-size: 1.05rem; max-width: 520px; margin: 0 auto; }
+
+        .sim-layout {
+            display: flex;
+            gap: 20px;
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 24px;
+        }
+
+        /* Nuevo orden: controles izquierda, mapa centro, conteo derecha */
+        .sim-panel-controls { flex: 0 0 280px; display: flex; flex-direction: column; gap: 16px; }
+        .sim-panel-stats { flex: 0 0 200px; display: flex; flex-direction: column; gap: 16px; }
+        .sim-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 12px; }
+
+        /* Barra superior sobre el mapa: tickets + acciones */
+        .sim-topbar {
+            display: flex;
+            gap: 12px;
+            align-items: flex-end;
+            flex-wrap: wrap;
+        }
+        .sim-topbar-group {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+        .sim-topbar .panel-card {
+            margin-bottom: 0;
+            padding: 10px 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .sim-topbar .panel-card h3 {
+            margin-bottom: 0;
+            font-size: 0.75rem;
+        }
+        .sim-topbar input[type=number] {
+            width: 80px;
+            padding: 5px 8px;
+            font-family: inherit;
+            font-size: 0.85rem;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+        }
+        .sim-topbar-btn {
+            background: var(--getin-green);
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            padding: 8px 14px;
+            font-family: inherit;
+            font-size: 0.82rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .sim-topbar-btn:hover { background: var(--getin-green-dark); }
+        .sim-topbar-btn.secondary { background: #777; }
+        .sim-topbar-btn.secondary:hover { background: #555; }
+
+        /* Leyenda horizontal debajo del mapa */
+        .sim-legend-bar {
+            display: flex;
+            gap: 18px;
+            flex-wrap: wrap;
+            justify-content: center;
+            padding: 10px 16px;
+            background: #f9f9f9;
+            border-radius: 8px;
+        }
+        .sim-legend-bar .legend-item { margin-bottom: 0; }
+
+        .panel-card {
+            background: #f9f9f9;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 16px;
+        }
+
+        .panel-card h3 {
+            font-size: 0.85rem;
+            color: var(--text);
+            font-weight: 600;
+            margin-bottom: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .panel-card label {
+            display: block;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-bottom: 6px;
+            font-weight: 500;
+        }
+
+        .panel-card select {
+            width: 100%;
+            padding: 6px 8px;
+            font-family: inherit;
+            font-size: 0.85rem;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            cursor: pointer;
+            margin-bottom: 10px;
+        }
+
+        .panel-card input[type=range] {
+            width: 100%;
+            accent-color: var(--getin-green);
+            cursor: pointer;
+        }
+
+        .slider-value {
+            font-size: 0.75rem;
+            color: var(--text);
+            font-weight: 600;
+            margin-left: 6px;
+        }
+
+        .ant-subhead {
+            font-size: 0.78rem;
+            font-weight: 700;
+            color: var(--getin-green-dark);
+            margin: 10px 0 6px 0;
+            padding-bottom: 2px;
+            border-bottom: 1px dashed #ddd;
+            text-transform: uppercase;
+        }
+
+        .panel-card .slider-row { margin-bottom: 12px; }
+        .panel-card .slider-row:last-child { margin-bottom: 0; }
+
+        .sim-btn {
+            background: var(--getin-green);
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            padding: 8px 16px;
+            font-family: inherit;
+            font-size: 0.85rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.2s;
+            width: 100%;
+            margin-bottom: 8px;
+        }
+        .sim-btn:hover { background: var(--getin-green-dark); }
+        .sim-btn.secondary { background: #777; }
+        .sim-btn.secondary:hover { background: #555; }
+
+        .sim-stats {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .stat-card {
+            background: #fff;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 12px 16px;
+            text-align: center;
+        }
+        .stat-card .stat-value { font-size: 1.6rem; font-weight: 700; }
+        .stat-card .stat-label { font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; }
+        .stat-paseantes .stat-value { color: #00b894; }
+        .stat-visitas .stat-value { color: #0984e3; }
+        .stat-conversion .stat-value { color: var(--getin-green); }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.78rem;
+            color: var(--text-muted);
+            margin-bottom: 6px;
+        }
+        .legend-swatch {
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            border: 1px solid rgba(0,0,0,0.1);
+            flex-shrink: 0;
+        }
+
+        .sim-canvas-wrap {
+            background: #fff;
+            border: none;
+            border-radius: 12px;
+            padding: 0;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Logo GetIn de fondo opaco en canvas */
+        #sim-canvas {
+            display: block;
+            width: 100%;
+            height: auto;
+            cursor: crosshair;
+            border-radius: 12px;
+            touch-action: none;
+        }
+        .sim-canvas-logo-bg {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 60%;
+            max-width: 350px;
+            opacity: 0.06;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .sim-hint {
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 0.78rem;
+            padding: 10px;
+        }
+
+        .section-header {
+            margin-bottom: 24px;
+        }
+
+        .section-header h1 {
+            font-size: 26px;
+            color: var(--text);
+            font-weight: 700;
+        }
+
+        .section-header p {
+            color: var(--text-muted);
+            font-size: 15px;
+            margin-top: 4px;
+        }
+
+        .rf-sim-container {
+            display: grid;
+            grid-template-columns: 1fr 340px;
+            gap: 24px;
+            align-items: start;
+        }
+
+        .canvas-card {
+            background: #ffffff;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 16px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .canvas-toolbar {
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .tool-group {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .btn {
+            background: var(--nav-bg);
+            border: 1px solid #ddd;
+            padding: 8px 14px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text);
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn:hover { background: #eee; }
+
+        .btn-primary {
+            background: var(--getin-green);
+            color: white;
+            border: none;
+        }
+
+        .btn-primary:hover { background: var(--getin-green-dark); }
+
+        .btn-danger {
+            background: #fff0f0;
+            color: var(--warning-red);
+            border-color: #fcc;
+        }
+
+        .btn-danger:hover { background: #ffe0e0; }
+
+        #wavesCanvas {
+            background: #F9FAFB;
+            border: 1px solid #E5E7EB;
+            border-radius: 8px;
+            max-width: 100%;
+            touch-action: none;
+            cursor: crosshair;
+        }
+
+        .rf-sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .rf-card {
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+        }
+
+        .rf-card h3 {
+            font-size: 16px;
+            margin-bottom: 12px;
+            color: var(--text);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .control-group { margin-bottom: 16px; }
+        .control-group:last-child { margin-bottom: 0; }
+
+        .control-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 6px;
+            color: var(--text);
+        }
+
+        .control-label span.value { color: var(--getin-green-dark); }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .metric-box {
+            background: var(--nav-bg);
+            padding: 12px;
+            border-radius: 8px;
+            text-align: center;
+            border: 1px solid #eee;
+        }
+
+        .metric-box .number {
+            font-size: 20px;
+            font-weight: 800;
+            color: var(--getin-green);
+            line-height: 1.2;
+        }
+
+        .metric-box .label {
+            font-size: 10px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-top: 4px;
+        }
+
+        .info-box {
+            background: #EBF5FB;
+            border-left: 4px solid var(--accent-blue);
+            padding: 12px 14px;
+            border-radius: 4px;
+            font-size: 13px;
+            color: #1B4F72;
+            margin-top: 12px;
+            line-height: 1.5;
+        }
+
+        .info-box strong { display: block; margin-bottom: 4px; }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .badge-green { background: #E8F5EE; color: var(--getin-green-dark); }
+        .badge-orange { background: #FEF9E7; color: var(--warning-orange); }
+        .badge-red { background: #FDEDEC; color: var(--warning-red); }
+
+        .rf-legend-bar {
+            display: flex;
+            gap: 16px;
+            margin-top: 12px;
+            font-size: 12px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .rf-legend-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .rf-legend-color {
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+        }
+
+        .content-card {
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 24px;
+        }
+
+        .footer {
+            background: var(--footer-bg);
+            color: #fff;
+            text-align: center;
+            padding: 40px 24px;
+            margin-top: 40px;
+        }
+        .footer-logo { height: 28px; width: auto; margin-bottom: 12px; filter: brightness(0) invert(1); opacity: 0.9; }
+        .footer p { color: rgba(255,255,255,0.7); font-size: 0.85rem; margin-bottom: 6px; }
+
+        @media (max-width: 992px) {
+            .sim-layout { flex-direction: column; }
+            .sim-panel-controls, .sim-panel-stats { flex: 0 0 auto; }
+            .sim-main { flex: 0 0 auto; }
+            .rf-sim-container { grid-template-columns: 1fr; }
+            .sim-topbar { flex-direction: column; align-items: stretch; }
+        }
+    </style>
+</head>
+<body>
+
+<nav class="tabs">
+    <img src="https://getin.mx/wp-content/themes/getin-theme/public/images/logo-getin.png" alt="Getin" class="tabs-logo">
+    <button class="tab-btn active" onclick="switchTab('rf', event)">Simulador Ondas RF</button>
+    <button class="tab-btn" onclick="switchTab('vecina', event)">Tienda Vecina</button>
+</nav>
+
+<div class="tab-content active" id="tab-rf">
+    <div class="sim-hero" style="background: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)), url('https://getin.mx/wp-content/themes/getin-theme/public/images/slider/getin0-min.jpg') center center / cover no-repeat;">
+        <h1>📡 Simulador de Ondas Electromagnéticas (RF)</h1>
+        <p>Visualizá la propagación de ondas de la antena y la atenuación producida por la afluencia de personas.</p>
+    </div>
+
+    <div style="max-width: 1280px; margin: 0 auto; padding: 24px;">
+        <!-- Explicación de Cuerpos de Agua -->
+        <div class="content-card" style="border-left: 4px solid var(--getin-green);">
+            <h3 style="font-size: 16px; margin-bottom: 6px; color: var(--getin-green-dark); font-weight: 700;">Visión Natural vs Calibración — Cómo funciona la antena</h3>
+            <p style="font-size: 14px; color: var(--text); line-height: 1.55;">
+                La antena <strong>nunca deja de ver</strong>. Su <strong>visión natural (Raw)</strong> llega hasta -100 dBm y <strong>siempre cubre toda la tienda</strong> sin importar la cantidad de personas o anaqueles. La <strong>calibración</strong> define el umbral de visitas: solo las señales entre -20 y -90 dBm cuentan como "dentro de la tienda". Las personas (cuerpos de agua) y anaqueles atenúan la señal de visitas, reduciendo el área efectiva sin afectar la visión natural.
+            </p>
+        </div>
+
+        <div class="rf-sim-container">
+            <!-- Left Panel: Canvas Display -->
+            <div class="canvas-card">
+                <div class="canvas-toolbar">
+                    <div class="tool-group">
+                        <button class="btn btn-primary" id="btn-add-person" onclick="RFSimulator.setMode('person')">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="7" r="4"/><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/></svg>
+                            + Agregar Personas
+                        </button>
+                        <button class="btn" id="btn-add-shelf" onclick="RFSimulator.setMode('shelf')">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18"/></svg>
+                            + Agregar Anaquel
+                        </button>
+                        <button class="btn btn-danger" onclick="RFSimulator.clearElements()">
+                            Limpiar Todo
+                        </button>
+                        <button class="btn" id="btn-toggle-anim" onclick="RFSimulator.toggleAnimation()">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
+                            ⏸ Pausar
+                        </button>
+                    </div>
+
+                    <div class="tool-group">
+                        <label style="font-size: 12px; font-weight: 600; color: var(--text-muted);">Escenario:</label>
+                        <select id="preset-select" onchange="RFSimulator.loadPreset(this.value)" style="padding: 6px 10px; border-radius: 6px; border: 1px solid #ccc; font-size: 12px;">
+                            <option value="empty">Tienda Vacía</option>
+                            <option value="medium">Flujo Normal (8 personas)</option>
+                            <option value="crowded">Aglomeración (20 personas)</option>
+                            <option value="max_capacity" selected>Tienda a Capacidad Máxima (50 personas)</option>
+                            <option value="shelves">Anaqueles + Clientes</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Canvas element -->
+                <canvas id="wavesCanvas" width="800" height="520"></canvas>
+
+                <!-- Legend -->
+                <div class="rf-legend-bar">
+                    <div class="rf-legend-item">
+                        <div class="rf-legend-color" style="background: rgba(44, 173, 120, 0.25); border: 1px dashed #2CAD78;"></div>
+                        <span>Área de Visitas (Calibración)</span>
+                    </div>
+                    <div class="rf-legend-item">
+                        <div class="rf-legend-color" style="background: rgba(52, 152, 219, 0.15); border: 1px dashed #2980B9;"></div>
+                        <span>Visión Natural (Raw 0 a -100 dBm · siempre ve toda la tienda)</span>
+                    </div>
+                    <div class="rf-legend-item">
+                        <div class="rf-legend-color" style="background: #2CAD78;"></div>
+                        <span>Cliente en Visitas</span>
+                    </div>
+                    <div class="rf-legend-item">
+                        <div class="rf-legend-color" style="background: #F39C12;"></div>
+                        <span>Cliente en Raw (fuera de calibración)</span>
+                    </div>
+                    <div class="rf-legend-item">
+                        <div class="rf-legend-color" style="background: #9B59B6;"></div>
+                        <span>Antena GetIn</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Panel: Controls & Metrics -->
+            <div class="rf-sidebar">
+                <div class="rf-card">
+                    <h3>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                        Campo de Visión (Calibración RSSI)
+                    </h3>
+
+                    <div class="control-group">
+                        <div class="control-label">
+                            <span>Umbral de Visión (dBm)</span>
+                            <span class="value" id="power-val">-40 dBm</span>
+                        </div>
+                        <input type="range" id="powerSlider" min="-90" max="-20" value="-40" step="1" oninput="RFSimulator.updatePower(this.value)">
+                    </div>
+
+                    <div class="control-group">
+                        <div class="control-label">
+                            <span>Distancia de visión de la antena</span>
+                            <span class="value" id="vision-distance">— m</span>
+                        </div>
+                    </div>
+
+                    <div class="info-box">
+                        <strong>Visión Natural vs Calibración:</strong>
+                        La <strong>visión natural</strong> (azul) muestra el alcance real de la antena de 0 a -100 dBm — <strong>siempre cubre toda la tienda</strong> sin importar personas o anaqueles. La <strong>calibración</strong> (verde) define qué señales cuentan como visita, en el rango de -20 a -90 dBm. Subir el umbral reduce el área de visitas; bajarlo la acerca a la visión natural. Los cuerpos de agua y anaqueles atenúan solo la señal de visitas, no la visión natural.
+                    </div>
+                </div>
+
+                <div class="rf-card">
+                    <h3>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+                        Lectura de Antena
+                    </h3>
+
+                    <div class="metrics-grid">
+                        <div class="metric-box">
+                            <div class="number" id="metric-total">0</div>
+                            <div class="label" title="Raw Detections a -100 dBm — siempre ve toda la tienda">Raw Entries</div>
+                        </div>
+                        <div class="metric-box">
+                            <div class="number" id="metric-detected" style="color: var(--getin-green);">0</div>
+                            <div class="label">En Tienda</div>
+                        </div>
+                        <div class="metric-box">
+                            <div class="number" id="metric-coverage">0%</div>
+                            <div class="label">Cobertura</div>
+                        </div>
+                    </div>
+
+                    <div style="margin-top: 16px; text-align: center;">
+                        <span id="status-badge" class="badge badge-green">CALIBRACIÓN ÓPTIMA</span>
+                    </div>
+                </div>
+
+                <div class="rf-card">
+                    <h3>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                        ¿Cómo funciona la calibración?
+                    </h3>
+                    <p style="font-size: 12.5px; color: var(--text-muted); line-height: 1.5;">
+                        La antena <strong>nunca deja de detectar</strong>. La visión natural (azul, 0 a -100 dBm) <strong>siempre cubre toda la tienda</strong> sin importar la cantidad de personas o anaqueles. La calibración (verde) define cuáles cuentan como <strong>visitas</strong> (rango -20 a -90 dBm). Los cuerpos de agua y anaqueles atenúan solo la señal de visitas, reduciendo el área de visitas sin cambiar la visión natural.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <img src="https://getin.mx/wp-content/themes/getin-theme/public/images/logo-getin.png" alt="Getin" class="footer-logo">
+        <p>GetIn · Medición e Inteligencia de Retail</p>
+        <p>¿Dudas? Tu gerente de cuenta está para ayudarte.</p>
+    </footer>
+</div>
+
+<div class="tab-content" id="tab-vecina">
+    <div class="sim-hero" style="background: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)), url('https://getin.mx/wp-content/themes/getin-theme/public/images/slider/getin0-min.jpg') center center / cover no-repeat;">
+        <h1>🏬 Simulador Tienda Vecina — Contaminación Cruzada RF</h1>
+        <p>Dos tiendas pegadas separadas por un muro de concreto. La antena está en la Tienda A — ¿detecta personas de la Tienda B?</p>
+    </div>
+
+    <div style="max-width: 1280px; margin: 0 auto; padding: 24px;">
+        <!-- Panel informativo -->
+        <div class="content-card" style="border-left: 4px solid var(--getin-green);">
+            <h3 style="font-size: 16px; margin-bottom: 6px; color: var(--getin-green-dark); font-weight: 700;">¿Qué muestra esta simulación?</h3>
+            <p style="font-size: 14px; color: var(--text); line-height: 1.55;">
+                Esta simulación muestra dos tiendas pegadas separadas por un muro de concreto de 15cm. La antena está en la Tienda A (izquierda). El muro atenúa ~20 dBm a TODAS las señales que lo atraviesan (incluyendo la visión natural/raw). Con una calibración correcta, las personas de la Tienda B no se cuentan como visitas. Si el umbral es muy bajo, los dispositivos de la tienda vecina pueden registrarse como visitas falsas (contaminación cruzada).
+            </p>
+        </div>
+
+        <div class="rf-sim-container">
+            <!-- Left Panel: Canvas Display -->
+            <div class="canvas-card">
+                <div class="canvas-toolbar">
+                    <div class="tool-group">
+                        <button class="btn btn-primary" id="btn-add-person-vecina" onclick="VecinaSimulator.setMode('person')">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="7" r="4"/><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/></svg>
+                            + Agregar Personas
+                        </button>
+                        <button class="btn" id="btn-add-shelf-vecina" onclick="VecinaSimulator.setMode('shelf')">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18"/></svg>
+                            + Agregar Anaquel
+                        </button>
+                        <button class="btn btn-danger" onclick="VecinaSimulator.clearElements()">
+                            Limpiar Todo
+                        </button>
+                        <button class="btn" id="btn-toggle-anim-vecina" onclick="VecinaSimulator.toggleAnimation()">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
+                            ⏸ Pausar
+                        </button>
+                    </div>
+
+                    <div class="tool-group">
+                        <label style="font-size: 12px; font-weight: 600; color: var(--text-muted);">Escenario:</label>
+                        <select id="preset-select-vecina" onchange="VecinaSimulator.loadPreset(this.value)" style="padding: 6px 10px; border-radius: 6px; border: 1px solid #ccc; font-size: 12px;">
+                            <option value="empty">Tienda Vacía</option>
+                            <option value="medium">Flujo Normal (8A / 5B)</option>
+                            <option value="crowded" selected>Aglomeración (20A / 15B)</option>
+                            <option value="max_capacity">Capacidad Máxima (50A / 30B)</option>
+                            <option value="cross_contamination">Contaminación Cruzada (0A / 20B)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Canvas element -->
+                <canvas id="vecinaCanvas" width="1000" height="520"></canvas>
+
+                <!-- Legend -->
+                <div class="rf-legend-bar">
+                    <div class="rf-legend-item">
+                        <div class="rf-legend-color" style="background: rgba(44, 173, 120, 0.25); border: 1px dashed #2CAD78;"></div>
+                        <span>Área de Visitas (Calibración)</span>
+                    </div>
+                    <div class="rf-legend-item">
+                        <div class="rf-legend-color" style="background: rgba(52, 152, 219, 0.15); border: 1px dashed #2980B9;"></div>
+                        <span>Visión Natural (Raw)</span>
+                    </div>
+                    <div class="rf-legend-item">
+                        <div class="rf-legend-color" style="background: #2CAD78;"></div>
+                        <span>Cliente en Visitas</span>
+                    </div>
+                    <div class="rf-legend-item">
+                        <div class="rf-legend-color" style="background: #F39C12;"></div>
+                        <span>Cliente en Raw (fuera de calibración)</span>
+                    </div>
+                    <div class="rf-legend-item">
+                        <div class="rf-legend-color" style="background: #9B59B6;"></div>
+                        <span>Antena GetIn</span>
+                    </div>
+                    <div class="rf-legend-item">
+                        <div class="rf-legend-color" style="background: #8B7355; border: 1px solid #5D4E37;"></div>
+                        <span>🟫 Muro de Concreto (15cm, ~20 dBm atenuación)</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Panel: Controls & Metrics -->
+            <div class="rf-sidebar">
+                <div class="rf-card">
+                    <h3>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                        Campo de Visión (Calibración RSSI)
+                    </h3>
+
+                    <div class="control-group">
+                        <div class="control-label">
+                            <span>Umbral de Visión (dBm)</span>
+                            <span class="value" id="power-val-vecina">-40 dBm</span>
+                        </div>
+                        <input type="range" id="powerSliderVecina" min="-90" max="-20" value="-40" step="1" oninput="VecinaSimulator.updatePower(this.value)">
+                    </div>
+
+                    <div class="control-group">
+                        <div class="control-label">
+                            <span>Distancia de visión de la antena</span>
+                            <span class="value" id="vision-distance-vecina">— m</span>
+                        </div>
+                    </div>
+
+                    <div class="info-box">
+                        <strong>Contaminación Cruzada:</strong>
+                        El muro de concreto atenúa ~20 dBm a TODAS las señales (raw y visitas). Bajar el umbral excesivamente puede hacer que dispositivos de la Tienda B aparezcan como visitas en la Tienda A.
+                    </div>
+                </div>
+
+                <div class="rf-card">
+                    <h3>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+                        Lectura de Antena — Tienda A
+                    </h3>
+
+                    <div class="metrics-grid">
+                        <div class="metric-box">
+                            <div class="number" id="vecina-metric-raw-a">0</div>
+                            <div class="label">Raw Entries (Tienda A)</div>
+                        </div>
+                        <div class="metric-box">
+                            <div class="number" id="vecina-metric-raw-b" style="color: var(--warning-red);">0</div>
+                            <div class="label">Raw Entries (Tienda B)</div>
+                        </div>
+                        <div class="metric-box">
+                            <div class="number" id="vecina-metric-visitas-a" style="color: var(--getin-green);">0</div>
+                            <div class="label">Visitas (Tienda A)</div>
+                        </div>
+                    </div>
+
+                    <div class="metrics-grid" style="margin-top: 10px;">
+                        <div class="metric-box">
+                            <div class="number" id="vecina-metric-visitas-b" style="color: var(--warning-orange);">0</div>
+                            <div class="label">Visitas (Tienda B)</div>
+                        </div>
+                        <div class="metric-box">
+                            <div class="number" id="vecina-metric-falsas" style="color: var(--warning-red);">0</div>
+                            <div class="label">Falsas Visitas</div>
+                        </div>
+                        <div class="metric-box">
+                            <div class="number" id="vecina-metric-cobertura">0%</div>
+                            <div class="label">Cobertura A</div>
+                        </div>
+                    </div>
+
+                    <div style="margin-top: 16px; text-align: center;">
+                        <span id="vecina-status-badge" class="badge badge-green">SIN CONTAMINACIÓN</span>
+                    </div>
+                </div>
+
+                <div class="rf-card">
+                    <h3>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                        ¿Cómo funciona el muro?
+                    </h3>
+                    <p style="font-size: 12.5px; color: var(--text-muted); line-height: 1.5;">
+                        El muro de concreto de 15cm entre ambas tiendas aporta <strong>20 dBm de atenuación</strong> a todas las señales que lo atraviesan. Esto afecta tanto la visión natural (raw) como la calibración de visitas. A diferencia de los anaqueles (que solo afectan visitas), el muro reduce TODA la señal.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <img src="https://getin.mx/wp-content/themes/getin-theme/public/images/logo-getin.png" alt="Getin" class="footer-logo">
+        <p>GetIn · Medición e Inteligencia de Retail</p>
+        <p>¿Dudas? Tu gerente de cuenta está para ayudarte.</p>
+    </footer>
+</div>
+
+<script>
+// --- GLOBAL TAB SWITCHER ---
+function switchTab(tabId, event) {
+    document.querySelectorAll('.tab-content').forEach(function(el) { el.classList.remove('active'); });
+    document.querySelectorAll('.tab-btn').forEach(function(el) { el.classList.remove('active'); });
+    
+    var targetTab = document.getElementById('tab-' + tabId);
+    if (targetTab) targetTab.classList.add('active');
+    
+    if (event && event.currentTarget) {
+        event.currentTarget.classList.add('active');
+    }
+
+    if (tabId === 'rf') {
+        RFSimulator.initSim();
+    }
+    if (tabId === 'vecina') {
+        VecinaSimulator.initSim();
+    }
+}
+
+// --- MODULE 2: RF WAVES SIMULATOR (ONDAS ELECTROMAGNÉTICAS Y CUERPOS DE AGUA) ---
+const RFSimulator = (function() {
+    var canvas, ctx;
+    // Modelo de propagacion calibrado por Jonathan:
+    // RAW: 0 a -100 dBm — siempre ve toda la tienda, no se atenúa por cuerpos/anaqueles
+    // VISITAS: -20 a -90 dBm — depende de distancia + atenuación por cuerpos de agua y anaqueles
+    // Tramo 1 (0-600px): logaritmico, signal = -19.86 - 14.5*log10(dist)
+    // Tramo 2 (600-1100px): lineal, de -60 a -100 dBm
+    var antenna = { x: 700, y: 440, baseTxPower: -19.86, cutoffdBm: -40 };
+    var mode = 'person';
+    var people = [];
+    var shelves = [];
+    var wavePhase = 0;
+    var selectedElement = null;
+    var isDragging = false;
+    var isAnimRunning = false;
+    var isPaused = false;
+
+    var storeBounds = { x: 40, y: 40, width: 720, height: 440, wallThickness: 8 };
+    var cashierZone = { x: 620, y: 380, width: 120, height: 80 };
+
+    function initSim() {
+        canvas = document.getElementById('wavesCanvas');
+        if (!canvas) return;
+        ctx = canvas.getContext('2d');
+        // Inicializar display de dBm y distancia
+        var slider = document.getElementById('powerSlider');
+        if (slider) updatePower(slider.value);
+        loadPreset('max_capacity');
+        setupCanvasEvents();
+        if (!isAnimRunning) {
+            isAnimRunning = true;
+            animate();
+        }
+    }
+
+    function setMode(newMode) {
+        mode = newMode;
+        var btnP = document.getElementById('btn-add-person');
+        var btnS = document.getElementById('btn-add-shelf');
+        if (btnP) btnP.className = mode === 'person' ? 'btn btn-primary' : 'btn';
+        if (btnS) btnS.className = mode === 'shelf' ? 'btn btn-primary' : 'btn';
+    }
+
+    // dBm de visión natural (raw) — siempre -100, no cambia. El raw SIEMPRE ve toda la tienda.
+    var RAW_DBM = -100;
+
+    function updatePower(val) {
+        antenna.cutoffdBm = parseFloat(val);
+        
+        var pVal = document.getElementById('power-val');
+        if (pVal) pVal.innerText = antenna.cutoffdBm + " dBm";
+        
+        // Distancia de calibración (umbral de visitas)
+        var calRadiusPx = getCoverageRadius();
+        var calRadiusM = (calRadiusPx * 0.1).toFixed(1);
+        
+        // Distancia de visión natural (raw, -100 dBm) — siempre cubre toda la tienda
+        var rawRadiusPx = getRawCoverageRadius();
+        var rawRadiusM = (rawRadiusPx * 0.1).toFixed(1);
+        
+        var distEl = document.getElementById('vision-distance');
+        if (distEl) distEl.innerText = "Calibración: " + calRadiusM + " m | Raw: " + rawRadiusM + " m";
+    }
+
+    function clearElements() {
+        people = [];
+        shelves = [];
+    }
+
+    function loadPreset(type) {
+        people = [];
+        shelves = [
+            { x: 180, y: 120, w: 220, h: 30 },
+            { x: 180, y: 220, w: 220, h: 30 },
+            { x: 180, y: 320, w: 220, h: 30 },
+            { x: 480, y: 120, w: 160, h: 30 }
+        ];
+
+        if (type === 'empty') {
+            people = [];
+        } else if (type === 'medium') {
+            people = [
+                { x: 650, y: 200 }, { x: 550, y: 280 }, { x: 450, y: 180 },
+                { x: 380, y: 280 }, { x: 280, y: 180 }, { x: 200, y: 280 },
+                { x: 120, y: 150 }, { x: 100, y: 380 }
+            ];
+        } else if (type === 'crowded') {
+            for (let i = 0; i < 20; i++) {
+                people.push({ x: 80 + Math.random() * 600, y: 70 + Math.random() * 340 });
+            }
+        } else if (type === 'max_capacity') {
+            for (let i = 0; i < 50; i++) {
+                people.push({ x: 80 + Math.random() * 620, y: 70 + Math.random() * 340 });
+            }
+        } else if (type === 'shelves') {
+            shelves.push({ x: 480, y: 220, w: 160, h: 30 });
+            shelves.push({ x: 480, y: 320, w: 160, h: 30 });
+            for (let i = 0; i < 15; i++) {
+                people.push({ x: 80 + Math.random() * 600, y: 80 + Math.random() * 320 });
+            }
+        }
+    }
+
+    function isInStore(x, y) {
+        return x >= storeBounds.x && 
+               x <= storeBounds.x + storeBounds.width &&
+               y >= storeBounds.y && 
+               y <= storeBounds.y + storeBounds.height;
+    }
+
+    // Radio de calibracion (donde la senal = cutoffdBm) sin atenuacion
+    // Visitas pueden ir de -20 a -90 dBm segun distancia + atenuacion
+    function getCoverageRadius() {
+        var dbm = antenna.cutoffdBm;
+        if (dbm >= -60.1) {
+            // Tramo 1: signal = -19.86 - 14.5*log10(r) = dbm
+            return Math.max(5, Math.pow(10, (-19.86 - dbm) / 14.5));
+        } else {
+            // Tramo 2: lineal de -60.1 (600px) a -90 (1100px max para visitas)
+            var t = (-60.1 - dbm) / 29.9;
+            return 600 + t * 500;
+        }
+    }
+
+    // Radio de vision natural (raw, -100 dBm) sin atenuacion
+    // El raw SIEMPRE cubre toda la tienda + exterior. No se afecta por cuerpos/anaqueles.
+    function getRawCoverageRadius() {
+        return 1100; // 110m, -100 dBm — siempre mayor que la tienda
+    }
+
+    // Cálculo de señal para VISITAS (con atenuación por cuerpos de agua y anaqueles)
+    // Rango de visitas: -20 a -90 dBm
+    function calculateSignalAt(x, y) {
+        const dist = Math.hypot(x - antenna.x, y - antenna.y);
+        if (dist < 5) return -20; // Literalmente al lado de la antena = -20 dBm
+
+        // Path loss con modelo de dos tramos
+        let pathLoss;
+        if (dist <= 600) {
+            // Tramo 1: logaritmico calibrado (-20 a 5px, -60 a 600px)
+            pathLoss = 10.86 + 14.5 * Math.log10(dist);
+        } else {
+            // Tramo 2: lineal de -60.1 (600px) a -90 (1100px)
+            var t = (dist - 600) / 500;
+            pathLoss = 10.86 + 14.5 * Math.log10(600) + t * 29.9;
+        }
+
+        let waterAtten = 0;
+        people.forEach(p => {
+            const distToLine = pointToSegmentDistance(p, antenna, {x, y});
+            if (distToLine < 20) waterAtten += 2.8;
+        });
+
+        let shelfAtten = 0;
+        shelves.forEach(s => {
+            if (lineIntersectsRect(antenna, {x, y}, s)) shelfAtten += 5.0;
+        });
+
+        let rxSignal = -pathLoss - waterAtten - shelfAtten;
+        // Clamp de visitas: maximo -20 dBm (al lado de antena), minimo -90 dBm (maximo atenuado)
+        return Math.max(-90, Math.min(-20, rxSignal));
+    }
+
+    // Cálculo de señal RAW (visión natural) — SIN atenuación, siempre ve toda la tienda
+    function calculateRawSignalAt(x, y) {
+        const dist = Math.hypot(x - antenna.x, y - antenna.y);
+        if (dist < 5) return 0; // Literalmente al lado = 0 dBm
+
+        // Path loss sin atenuación (modelo raw de 0 a -100 dBm)
+        let pathLoss;
+        if (dist <= 600) {
+            pathLoss = 14.5 * Math.log10(dist); // 0 dBm a ~-40 dBm
+        } else {
+            var t = (dist - 600) / 500;
+            pathLoss = 14.5 * Math.log10(600) + t * 60; // de -40 a -100 dBm
+        }
+
+        let rxSignal = -pathLoss;
+        // Clamp raw: 0 a -100 dBm
+        return Math.max(-100, Math.min(0, rxSignal));
+    }
+
+    function pointToSegmentDistance(p, a, b) {
+        const l2 = Math.hypot(a.x - b.x, a.y - b.y) ** 2;
+        if (l2 === 0) return Math.hypot(p.x - a.x, p.y - a.y);
+        let t = ((p.x - a.x) * (b.x - a.x) + (p.y - a.y) * (b.y - a.y)) / l2;
+        t = Math.max(0, Math.min(1, t));
+        return Math.hypot(p.x - (a.x + t * (b.x - a.x)), p.y - (a.y + t * (b.y - a.y)));
+    }
+
+    function lineIntersectsRect(p1, p2, r) {
+        const rectLines = [
+            [{x: r.x, y: r.y}, {x: r.x + r.w, y: r.y}],
+            [{x: r.x + r.w, y: r.y}, {x: r.x + r.w, y: r.y + r.h}],
+            [{x: r.x + r.w, y: r.y + r.h}, {x: r.x, y: r.y + r.h}],
+            [{x: r.x, y: r.y + r.h}, {x: r.x, y: r.y}]
+        ];
+        return rectLines.some(line => linesIntersect(p1, p2, line[0], line[1]));
+    }
+
+    function linesIntersect(a, b, c, d) {
+        const ccw = (p1, p2, p3) => (p3.y - p1.y) * (p2.x - p1.x) > (p2.y - p1.y) * (p3.x - p1.x);
+        return (ccw(a,c,d) !== ccw(b,c,d)) && (ccw(a,b,c) !== ccw(a,b,d));
+    }
+
+    function animate() {
+        if (!isPaused) {
+            wavePhase = (wavePhase + 0.4) % 40;
+        }
+        var rfTab = document.getElementById('tab-rf');
+        if (rfTab && rfTab.classList.contains('active')) {
+            drawWavesSimulation();
+        }
+        requestAnimationFrame(animate);
+    }
+
+    function toggleAnimation() {
+        isPaused = !isPaused;
+        var btn = document.getElementById('btn-toggle-anim');
+        if (btn) {
+            if (isPaused) {
+                btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg> ▶ Reanudar';
+                btn.className = 'btn';
+            } else {
+                btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg> ⏸ Pausar';
+                btn.className = 'btn';
+            }
+        }
+    }
+
+    function drawWavesSimulation() {
+        if (!ctx) return;
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // Fondo general (área fuera de tienda)
+        ctx.fillStyle = "#F0F0F2";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // Store Floor
+        ctx.fillStyle = "#FFFFFF";
+        ctx.fillRect(storeBounds.x, storeBounds.y, storeBounds.width, storeBounds.height);
+
+        var calRadius = getCoverageRadius();      // Radio de calibración (visitas)
+        var rawRadius = getRawCoverageRadius();    // Radio de visión natural (-100 dBm)
+
+        // === Heatmap de 3 zonas ===
+        // Verde: dentro de calibración (visitas)
+        // Azul tenue: entre calibración y raw (detectado pero no visita)
+        // El raw SIEMPRE ve toda la tienda, así que dentro de la tienda siempre hay al menos azul
+        const gridSize = 14;
+        for (let x = 0; x < canvas.width; x += gridSize) {
+            for (let y = 0; y < canvas.height; y += gridSize) {
+                const cx = x + gridSize/2;
+                const cy = y + gridSize/2;
+                const rawSignal = calculateRawSignalAt(cx, cy);
+                const visSignal = calculateSignalAt(cx, cy);
+                
+                if (visSignal >= antenna.cutoffdBm) {
+                    // Dentro de calibración = visitas (verde)
+                    ctx.fillStyle = "rgba(44, 173, 120, 0.16)";
+                } else if (rawSignal >= RAW_DBM) {
+                    // Detectado por raw pero no es visita (azul tenue)
+                    ctx.fillStyle = "rgba(52, 152, 219, 0.12)";
+                } else {
+                    // Fuera de raw = no detectado (gris)
+                    ctx.fillStyle = "rgba(220, 224, 230, 0.25)";
+                }
+                ctx.fillRect(x, y, gridSize, gridSize);
+            }
+        }
+
+        // === ONDA DE VISIÓN NATURAL (Raw, azul) — siempre cubre toda la tienda ===
+        // Se dibuja fuera y dentro de la tienda — la antena nunca deja de ver
+        ctx.save();
+        // No clip a tienda: la onda raw puede extender fuera
+
+        // Círculo límite raw
+        ctx.beginPath();
+        ctx.arc(antenna.x, antenna.y, rawRadius, 0, Math.PI * 2);
+        ctx.strokeStyle = 'rgba(41, 128, 185, 0.5)';
+        ctx.lineWidth = 2;
+        ctx.setLineDash([4, 4]);
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        // Etiqueta raw
+        var rawLabelAngle = -Math.PI / 4;
+        var rawLabelX = antenna.x + Math.cos(rawLabelAngle) * rawRadius;
+        var rawLabelY = antenna.y + Math.sin(rawLabelAngle) * rawRadius;
+        ctx.fillStyle = 'rgba(41, 128, 185, 0.9)';
+        ctx.font = 'bold 11px sans-serif';
+        ctx.textAlign = 'center';
+        var rawDistM = (rawRadius * 0.1).toFixed(1);
+        // Fondo para legibilidad
+        var rawLabel = 'Raw -100 dBm · ' + rawDistM + ' m';
+        var rawLabelW = ctx.measureText(rawLabel).width;
+        ctx.fillStyle = 'rgba(255,255,255,0.85)';
+        ctx.fillRect(rawLabelX - rawLabelW/2 - 4, rawLabelY - 16, rawLabelW + 8, 14);
+        ctx.fillStyle = 'rgba(41, 128, 185, 0.9)';
+        ctx.fillText(rawLabel, rawLabelX, rawLabelY - 6);
+
+        // Ondas concéntricas raw (azul, tenues)
+        for (var r = wavePhase; r < rawRadius; r += 50) {
+            var rawIntensity = Math.max(0, 1 - r / rawRadius);
+            ctx.beginPath();
+            ctx.arc(antenna.x, antenna.y, r, 0, Math.PI * 2);
+            ctx.strokeStyle = 'rgba(52, 152, 219, ' + (rawIntensity * 0.2) + ')';
+            ctx.lineWidth = 1;
+            ctx.setLineDash([8, 12]);
+            ctx.stroke();
+            ctx.setLineDash([]);
+        }
+        ctx.restore();
+
+        // === ONDA DE CALIBRACIÓN (Visitas, verde) — SIN línea punteada ===
+        ctx.save();
+        ctx.beginPath();
+        ctx.rect(storeBounds.x, storeBounds.y, storeBounds.width, storeBounds.height);
+        ctx.clip();
+
+        // Ondas concéntricas de calibración (verde) — sin círculo límite punteado
+        for (var r = wavePhase; r < calRadius; r += 35) {
+            var calIntensity = Math.max(0, 1 - r / calRadius);
+            ctx.beginPath();
+            ctx.arc(antenna.x, antenna.y, r, 0, Math.PI * 2);
+            ctx.strokeStyle = 'rgba(44, 173, 120, ' + (calIntensity * 0.35) + ')';
+            ctx.lineWidth = 1.5;
+            ctx.setLineDash([10, 8]);
+            ctx.stroke();
+            ctx.setLineDash([]);
+        }
+        ctx.restore();
+
+        // Cashier Zone
+        ctx.fillStyle = "#EAECEE";
+        ctx.strokeStyle = "#BDC3C7";
+        ctx.lineWidth = 1.5;
+        ctx.fillRect(cashierZone.x, cashierZone.y, cashierZone.width, cashierZone.height);
+        ctx.strokeRect(cashierZone.x, cashierZone.y, cashierZone.width, cashierZone.height);
+        
+        ctx.fillStyle = "#7F8C8D";
+        ctx.font = "bold 11px sans-serif";
+        ctx.textAlign = "center";
+        ctx.fillText("ÁREA DE CAJAS", cashierZone.x + cashierZone.width/2, cashierZone.y + cashierZone.height/2 + 16);
+
+        // Shelves
+        ctx.fillStyle = "#34495E";
+        shelves.forEach(s => {
+            ctx.fillRect(s.x, s.y, s.w, s.h);
+            ctx.strokeStyle = "#2C3E50";
+            ctx.strokeRect(s.x, s.y, s.w, s.h);
+            ctx.fillStyle = "#FFFFFF";
+            ctx.font = "10px sans-serif";
+            ctx.fillText("ANAQUEL", s.x + s.w/2, s.y + s.h/2 + 3);
+            ctx.fillStyle = "#34495E";
+        });
+
+        // Store Outer Walls & Doors
+        ctx.strokeStyle = "#2C3E50";
+        ctx.lineWidth = storeBounds.wallThickness;
+        ctx.strokeRect(
+            storeBounds.x - storeBounds.wallThickness/2, 
+            storeBounds.y - storeBounds.wallThickness/2, 
+            storeBounds.width + storeBounds.wallThickness, 
+            storeBounds.height + storeBounds.wallThickness
+        );
+
+        ctx.fillStyle = "#2C3E50";
+        ctx.font = "bold 13px sans-serif";
+        ctx.fillText("ENTRADA PRINCIPAL TIENDA", storeBounds.x + 140, storeBounds.y - 12);
+
+        ctx.clearRect(storeBounds.x + 60, storeBounds.y - storeBounds.wallThickness, 140, storeBounds.wallThickness + 2);
+        ctx.strokeStyle = "#2CAD78";
+        ctx.lineWidth = 2;
+        ctx.strokeRect(storeBounds.x + 60, storeBounds.y - 2, 140, 4);
+
+        // Antenna node
+        ctx.save();
+        ctx.fillStyle = "#8E44AD";
+        ctx.beginPath();
+        ctx.arc(antenna.x, antenna.y, 12, 0, Math.PI * 2);
+        ctx.fill();
+        
+        ctx.strokeStyle = "#9B59B6";
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(antenna.x, antenna.y, 16 + Math.sin(Date.now() / 200) * 3, 0, Math.PI * 2);
+        ctx.stroke();
+
+        ctx.fillStyle = "#FFFFFF";
+        ctx.font = "bold 10px sans-serif";
+        ctx.fillText("ANTENA", antenna.x, antenna.y + 3);
+        ctx.restore();
+
+        // People & Attenuation Detections
+        let detectedInStoreCount = 0;  // dentro de calibración (visitas)
+        let rawEntriesCount = 0;       // dentro de raw (detectado pero puede no ser visita)
+
+        people.forEach((p) => {
+            const signal = calculateSignalAt(p.x, p.y);
+            const rawSignal = calculateRawSignalAt(p.x, p.y);
+            if (rawSignal >= RAW_DBM) rawEntriesCount++;
+
+            const isInsideCalibration = signal >= antenna.cutoffdBm;
+            const isInsideRaw = rawSignal >= RAW_DBM; // raw siempre ve toda la tienda
+            if (isInsideCalibration) detectedInStoreCount++;
+
+            // Color: verde = visita, naranja = raw pero fuera de calibración, rojo = fuera de raw
+            var personColor, bgColor, labelIcon, labelColor;
+            if (isInsideCalibration) {
+                personColor = "#2CAD78";
+                bgColor = "rgba(44, 173, 120, 0.25)";
+                labelIcon = "✓";
+                labelColor = "#1E8A5C";
+            } else if (isInsideRaw) {
+                personColor = "#F39C12";
+                bgColor = "rgba(243, 156, 18, 0.25)";
+                labelIcon = "👁";
+                labelColor = "#B7950B";
+            } else {
+                personColor = "#E74C3C";
+                bgColor = "rgba(231, 76, 60, 0.20)";
+                labelIcon = "✗";
+                labelColor = "#C0392B";
+            }
+
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, 14, 0, Math.PI * 2);
+            ctx.fillStyle = bgColor;
+            ctx.fill();
+
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, 9, 0, Math.PI * 2);
+            ctx.fillStyle = personColor;
+            ctx.fill();
+
+            ctx.fillStyle = "#FFFFFF";
+            ctx.font = "bold 9px sans-serif";
+            ctx.textAlign = "center";
+            ctx.fillText(labelIcon, p.x, p.y + 3);
+
+            ctx.fillStyle = labelColor;
+            ctx.font = "10px sans-serif";
+            ctx.fillText(`${Math.round(signal)} dBm (visitas)`, p.x, p.y - 16);
+        });
+
+        // Dashboard Metrics Update
+        const total = people.length;
+        const coverageRatio = total > 0 ? Math.round((detectedInStoreCount / total) * 100) : 100;
+
+        const mTotal = document.getElementById('metric-total');
+        const mDetected = document.getElementById('metric-detected');
+        const mCoverage = document.getElementById('metric-coverage');
+        const badge = document.getElementById('status-badge');
+
+        if (mTotal) mTotal.innerText = rawEntriesCount;
+        if (mDetected) mDetected.innerText = detectedInStoreCount;
+        if (mCoverage) mCoverage.innerText = coverageRatio + "%";
+
+        if (badge) {
+            if (coverageRatio >= 95) {
+                badge.innerText = "CALIBRACIÓN ÓPTIMA (100% VISIBLE)";
+                badge.className = "badge badge-green";
+            } else if (coverageRatio >= 60) {
+                badge.innerText = "VISIÓN PARCIAL (AMPLIAR CAMPO DE VISIÓN)";
+                badge.className = "badge badge-orange";
+            } else {
+                badge.innerText = "ENTRADA FUERA DEL CAMPO (AMPLIAR RSSI)";
+                badge.className = "badge badge-red";
+            }
+        }
+    }
+
+    function setupCanvasEvents() {
+        if (!canvas) return;
+
+        const getPos = (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            return {
+                x: (clientX - rect.left) * scaleX,
+                y: (clientY - rect.top) * scaleY
+            };
+        };
+
+        const handleDown = (e) => {
+            const pos = getPos(e);
+            if (!isInStore(pos.x, pos.y)) return;
+
+            const hitIndex = people.findIndex(p => Math.hypot(p.x - pos.x, p.y - pos.y) < 16);
+            if (hitIndex !== -1) {
+                selectedElement = { type: 'person', index: hitIndex };
+                isDragging = true;
+                return;
+            }
+
+            if (mode === 'person') {
+                people.push({ x: pos.x, y: pos.y });
+            } else if (mode === 'shelf') {
+                shelves.push({ x: pos.x - 40, y: pos.y - 15, w: 80, h: 30 });
+            }
+        };
+
+        const handleMove = (e) => {
+            if (!isDragging || !selectedElement) return;
+            const pos = getPos(e);
+            if (isInStore(pos.x, pos.y)) {
+                if (selectedElement.type === 'person') {
+                    people[selectedElement.index].x = pos.x;
+                    people[selectedElement.index].y = pos.y;
+                }
+            }
+        };
+
+        const handleUp = () => {
+            isDragging = false;
+            selectedElement = null;
+        };
+
+        canvas.addEventListener('mousedown', handleDown);
+        canvas.addEventListener('mousemove', handleMove);
+        canvas.addEventListener('mouseup', handleUp);
+
+        canvas.addEventListener('touchstart', (e) => { e.preventDefault(); handleDown(e); }, { passive: false });
+        canvas.addEventListener('touchmove', (e) => { e.preventDefault(); handleMove(e); }, { passive: false });
+        canvas.addEventListener('touchend', handleUp);
+    }
+
+    return {
+        initSim: initSim,
+        setMode: setMode,
+        updatePower: updatePower,
+        clearElements: clearElements,
+        loadPreset: loadPreset,
+        toggleAnimation: toggleAnimation
+    };
+})();
+
+// --- MODULE 3: VECINA SIMULATOR (DOS TIENDAS PEGADAS CON MURO DE CONCRETO) ---
+const VecinaSimulator = (function() {
+    var canvas, ctx;
+    var antenna = { x: 400, y: 440, baseTxPower: -19.86, cutoffdBm: -40 };
+    var mode = 'person';
+    var people = [];
+    var shelves = [];
+    var wavePhase = 0;
+    var selectedElement = null;
+    var isDragging = false;
+    var isAnimRunning = false;
+    var isPaused = false;
+
+    var storeBoundsA = { x: 40, y: 40, width: 440, height: 440, wallThickness: 8 };
+    var storeBoundsB = { x: 480, y: 40, width: 440, height: 440, wallThickness: 8 };
+    var wallX1 = 460, wallX2 = 475; // Muro de concreto de 15cm (~15px)
+    var cashierZoneA = { x: 320, y: 380, width: 120, height: 80 };
+    var cashierZoneB = { x: 540, y: 380, width: 120, height: 80 };
+    var WALL_ATTEN_DBM = 20;
+    var RAW_DBM = -100;
+
+    function initSim() {
+        canvas = document.getElementById('vecinaCanvas');
+        if (!canvas) return;
+        ctx = canvas.getContext('2d');
+        var slider = document.getElementById('powerSliderVecina');
+        if (slider) updatePower(slider.value);
+        loadPreset('crowded');
+        setupCanvasEvents();
+        if (!isAnimRunning) {
+            isAnimRunning = true;
+            animate();
+        }
+    }
+
+    function setMode(newMode) {
+        mode = newMode;
+        var btnP = document.getElementById('btn-add-person-vecina');
+        var btnS = document.getElementById('btn-add-shelf-vecina');
+        if (btnP) btnP.className = mode === 'person' ? 'btn btn-primary' : 'btn';
+        if (btnS) btnS.className = mode === 'shelf' ? 'btn btn-primary' : 'btn';
+    }
+
+    function updatePower(val) {
+        antenna.cutoffdBm = parseFloat(val);
+        var pVal = document.getElementById('power-val-vecina');
+        if (pVal) pVal.innerText = antenna.cutoffdBm + " dBm";
+        var calRadiusPx = getCoverageRadius();
+        var calRadiusM = (calRadiusPx * 0.1).toFixed(1);
+        var rawRadiusPx = getRawCoverageRadius();
+        var rawRadiusM = (rawRadiusPx * 0.1).toFixed(1);
+        var distEl = document.getElementById('vision-distance-vecina');
+        if (distEl) distEl.innerText = "Calibración: " + calRadiusM + " m | Raw: " + rawRadiusM + " m";
+    }
+
+    function clearElements() {
+        people = [];
+        shelves = [];
+    }
+
+    function loadPreset(type) {
+        people = [];
+        shelves = [
+            { x: 180, y: 120, w: 180, h: 30 },
+            { x: 180, y: 220, w: 180, h: 30 },
+            { x: 180, y: 320, w: 180, h: 30 }
+        ];
+
+        if (type === 'empty') {
+            people = [];
+        } else if (type === 'medium') {
+            // 8 personas en tienda A
+            people.push({x: 350, y: 200}); people.push({x: 280, y: 280}); people.push({x: 200, y: 180});
+            people.push({x: 150, y: 280}); people.push({x: 100, y: 150}); people.push({x: 80, y: 380});
+            people.push({x: 380, y: 150}); people.push({x: 250, y: 380});
+            // 5 personas en tienda B
+            people.push({x: 550, y: 200}); people.push({x: 650, y: 280}); people.push({x: 750, y: 180});
+            people.push({x: 600, y: 380}); people.push({x: 850, y: 250});
+        } else if (type === 'crowded') {
+            // 20 en tienda A
+            for (let i = 0; i < 20; i++) {
+                people.push({ x: 60 + Math.random() * 380, y: 60 + Math.random() * 340 });
+            }
+            // 15 en tienda B
+            for (let i = 0; i < 15; i++) {
+                people.push({ x: 500 + Math.random() * 380, y: 60 + Math.random() * 340 });
+            }
+        } else if (type === 'max_capacity') {
+            // 50 en tienda A
+            for (let i = 0; i < 50; i++) {
+                people.push({ x: 60 + Math.random() * 380, y: 60 + Math.random() * 340 });
+            }
+            // 30 en tienda B
+            for (let i = 0; i < 30; i++) {
+                people.push({ x: 500 + Math.random() * 380, y: 60 + Math.random() * 340 });
+            }
+        } else if (type === 'cross_contamination') {
+            // 0 en A, 20 en B
+            for (let i = 0; i < 20; i++) {
+                people.push({ x: 500 + Math.random() * 380, y: 60 + Math.random() * 340 });
+            }
+        }
+    }
+
+    function isInStoreA(x, y) {
+        return x >= storeBoundsA.x && x <= storeBoundsA.x + storeBoundsA.width &&
+               y >= storeBoundsA.y && y <= storeBoundsA.y + storeBoundsA.height;
+    }
+
+    function isInStoreB(x, y) {
+        return x >= storeBoundsB.x && x <= storeBoundsB.x + storeBoundsB.width &&
+               y >= storeBoundsB.y && y <= storeBoundsB.y + storeBoundsB.height;
+    }
+
+    function isInAnyStore(x, y) {
+        return isInStoreA(x, y) || isInStoreB(x, y);
+    }
+
+    // Detecta si la línea antenna→point atraviesa el muro (x entre wallX1 y wallX2)
+    function lineIntersectsWall(point) {
+        // La antena está en tienda A (x < wallX1), si el punto está en tienda B (x > wallX2)
+        // la línea necesariamente cruza el muro
+        if (antenna.x < wallX1 && point.x > wallX2) return true;
+        if (antenna.x > wallX2 && point.x < wallX1) return true;
+        // Si el punto está dentro del muro mismo
+        if (point.x >= wallX1 && point.x <= wallX2) return true;
+        return false;
+    }
+
+    function getCoverageRadius() {
+        var dbm = antenna.cutoffdBm;
+        if (dbm >= -60.1) {
+            return Math.max(5, Math.pow(10, (-19.86 - dbm) / 14.5));
+        } else {
+            var t = (-60.1 - dbm) / 29.9;
+            return 600 + t * 500;
+        }
+    }
+
+    function getRawCoverageRadius() {
+        return 1100;
+    }
+
+    // Señal de VISITAS con atenuación por agua + anaqueles + muro
+    function calculateSignalAtVecina(x, y) {
+        const dist = Math.hypot(x - antenna.x, y - antenna.y);
+        if (dist < 5) return -20;
+
+        let pathLoss;
+        if (dist <= 600) {
+            pathLoss = 10.86 + 14.5 * Math.log10(dist);
+        } else {
+            var t = (dist - 600) / 500;
+            pathLoss = 10.86 + 14.5 * Math.log10(600) + t * 29.9;
+        }
+
+        let waterAtten = 0;
+        people.forEach(p => {
+            const distToLine = pointToSegmentDistance(p, antenna, {x, y});
+            if (distToLine < 20) waterAtten += 2.8;
+        });
+
+        let shelfAtten = 0;
+        shelves.forEach(s => {
+            if (lineIntersectsRect(antenna, {x, y}, s)) shelfAtten += 5.0;
+        });
+
+        let wallAtten = lineIntersectsWall({x, y}) ? WALL_ATTEN_DBM : 0;
+
+        let rxSignal = -pathLoss - waterAtten - shelfAtten - wallAtten;
+        return Math.max(-90, Math.min(-20, rxSignal));
+    }
+
+    // Señal RAW con atenuación por muro (el raw ya NO es inmune al muro)
+    function calculateRawSignalAtVecina(x, y) {
+        const dist = Math.hypot(x - antenna.x, y - antenna.y);
+        if (dist < 5) return 0;
+
+        let pathLoss;
+        if (dist <= 600) {
+            pathLoss = 14.5 * Math.log10(dist);
+        } else {
+            var t = (dist - 600) / 500;
+            pathLoss = 14.5 * Math.log10(600) + t * 60;
+        }
+
+        let wallAtten = lineIntersectsWall({x, y}) ? WALL_ATTEN_DBM : 0;
+        let rxSignal = -pathLoss - wallAtten;
+        return Math.max(-100, Math.min(0, rxSignal));
+    }
+
+    function pointToSegmentDistance(p, a, b) {
+        const l2 = Math.hypot(a.x - b.x, a.y - b.y) ** 2;
+        if (l2 === 0) return Math.hypot(p.x - a.x, p.y - a.y);
+        let t = ((p.x - a.x) * (b.x - a.x) + (p.y - a.y) * (b.y - a.y)) / l2;
+        t = Math.max(0, Math.min(1, t));
+        return Math.hypot(p.x - (a.x + t * (b.x - a.x)), p.y - (a.y + t * (b.y - a.y)));
+    }
+
+    function lineIntersectsRect(p1, p2, r) {
+        const rectLines = [
+            [{x: r.x, y: r.y}, {x: r.x + r.w, y: r.y}],
+            [{x: r.x + r.w, y: r.y}, {x: r.x + r.w, y: r.y + r.h}],
+            [{x: r.x + r.w, y: r.y + r.h}, {x: r.x, y: r.y + r.h}],
+            [{x: r.x, y: r.y + r.h}, {x: r.x, y: r.y}]
+        ];
+        return rectLines.some(line => linesIntersect(p1, p2, line[0], line[1]));
+    }
+
+    function linesIntersect(a, b, c, d) {
+        const ccw = (p1, p2, p3) => (p3.y - p1.y) * (p2.x - p1.x) > (p2.y - p1.y) * (p3.x - p1.x);
+        return (ccw(a,c,d) !== ccw(b,c,d)) && (ccw(a,b,c) !== ccw(a,b,d));
+    }
+
+    function animate() {
+        if (!isPaused) {
+            wavePhase = (wavePhase + 0.4) % 40;
+        }
+        var vecinaTab = document.getElementById('tab-vecina');
+        if (vecinaTab && vecinaTab.classList.contains('active')) {
+            drawVecinaSimulation();
+        }
+        requestAnimationFrame(animate);
+    }
+
+    function toggleAnimation() {
+        isPaused = !isPaused;
+        var btn = document.getElementById('btn-toggle-anim-vecina');
+        if (btn) {
+            if (isPaused) {
+                btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg> ▶ Reanudar';
+                btn.className = 'btn';
+            } else {
+                btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg> ⏸ Pausar';
+                btn.className = 'btn';
+            }
+        }
+    }
+
+   function drawStore(storeBounds, label, entranceLabel) {
+        // Store Floor (base layer — heatmap goes on top)
+        ctx.fillStyle = "#FFFFFF";
+        ctx.fillRect(storeBounds.x, storeBounds.y, storeBounds.width, storeBounds.height);
+    }
+
+    function drawStoreWalls(storeBounds, label, entranceLabel) {
+        // Store Outer Walls (drawn on top of heatmap + waves)
+
+        // Store Outer Walls
+        ctx.strokeStyle = "#2C3E50";
+        ctx.lineWidth = storeBounds.wallThickness;
+        ctx.strokeRect(
+            storeBounds.x - storeBounds.wallThickness/2,
+            storeBounds.y - storeBounds.wallThickness/2,
+            storeBounds.width + storeBounds.wallThickness,
+            storeBounds.height + storeBounds.wallThickness
+        );
+
+        // Store label
+        ctx.fillStyle = "#2C3E50";
+        ctx.font = "bold 13px sans-serif";
+        ctx.textAlign = "center";
+        ctx.fillText(label, storeBounds.x + storeBounds.width/2, storeBounds.y - 12);
+
+        // Entrance
+        ctx.clearRect(storeBounds.x + 60, storeBounds.y - storeBounds.wallThickness, 140, storeBounds.wallThickness + 2);
+        ctx.strokeStyle = "#2CAD78";
+        ctx.lineWidth = 2;
+        ctx.strokeRect(storeBounds.x + 60, storeBounds.y - 2, 140, 4);
+        ctx.fillStyle = "#2CAD78";
+        ctx.font = "bold 10px sans-serif";
+        ctx.fillText(entranceLabel, storeBounds.x + 130, storeBounds.y - 20);
+    }
+
+    function drawCashierZone(zone) {
+        ctx.fillStyle = "#EAECEE";
+        ctx.strokeStyle = "#BDC3C7";
+        ctx.lineWidth = 1.5;
+        ctx.fillRect(zone.x, zone.y, zone.width, zone.height);
+        ctx.strokeRect(zone.x, zone.y, zone.width, zone.height);
+        ctx.fillStyle = "#7F8C8D";
+        ctx.font = "bold 11px sans-serif";
+        ctx.textAlign = "center";
+        ctx.fillText("ÁREA DE CAJAS", zone.x + zone.width/2, zone.y + zone.height/2 + 16);
+    }
+
+    function drawWall() {
+        // Muro de concreto: rectángulo sólido marrón/gris con textura de líneas diagonales
+        ctx.save();
+        ctx.fillStyle = "#8B7355";
+        ctx.fillRect(wallX1, storeBoundsA.y, wallX2 - wallX1, storeBoundsA.height);
+
+        // Textura de líneas diagonales (concreto)
+        ctx.strokeStyle = "#6B5B45";
+        ctx.lineWidth = 1;
+        for (var y = storeBoundsA.y; y < storeBoundsA.y + storeBoundsA.height; y += 8) {
+            ctx.beginPath();
+            ctx.moveTo(wallX1, y);
+            ctx.lineTo(wallX2, y + 8);
+            ctx.stroke();
+        }
+
+        // Borde del muro
+        ctx.strokeStyle = "#5D4E37";
+        ctx.lineWidth = 2;
+        ctx.strokeRect(wallX1, storeBoundsA.y, wallX2 - wallX1, storeBoundsA.height);
+
+        // Label del muro
+        ctx.fillStyle = "#FFFFFF";
+        ctx.font = "bold 9px sans-serif";
+        ctx.textAlign = "center";
+        ctx.save();
+        ctx.translate((wallX1 + wallX2) / 2, storeBoundsA.y + storeBoundsA.height / 2);
+        ctx.rotate(-Math.PI / 2);
+        ctx.fillText("MURO CONCRETO 15cm", 0, 3);
+        ctx.restore();
+
+        ctx.restore();
+    }
+
+    function drawVecinaSimulation() {
+        if (!ctx) return;
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // Fondo general
+        ctx.fillStyle = "#F0F0F2";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        var calRadius = getCoverageRadius();
+        var rawRadius = getRawCoverageRadius();
+
+        // 1. Draw store floors FIRST (white base layer)
+        drawStore(storeBoundsA, "TIENDA A", "ENTRADA");
+        drawStore(storeBoundsB, "TIENDA B (VECINA)", "ENTRADA");
+
+        // 2. Draw cashier zones on top of store floor
+        drawCashierZone(cashierZoneA);
+        drawCashierZone(cashierZoneB);
+
+        // 3. Heatmap ON TOP of store floor (so waves show through)
+        const gridSize = 14;
+        for (let x = 0; x < canvas.width; x += gridSize) {
+            for (let y = 0; y < canvas.height; y += gridSize) {
+                const cx = x + gridSize/2;
+                const cy = y + gridSize/2;
+                const rawSignal = calculateRawSignalAtVecina(cx, cy);
+                const visSignal = calculateSignalAtVecina(cx, cy);
+                
+                if (visSignal >= antenna.cutoffdBm) {
+                    ctx.fillStyle = "rgba(44, 173, 120, 0.16)";
+                } else if (rawSignal >= RAW_DBM) {
+                    ctx.fillStyle = "rgba(52, 152, 219, 0.12)";
+                } else {
+                    ctx.fillStyle = "rgba(220, 224, 230, 0.25)";
+                }
+                ctx.fillRect(x, y, gridSize, gridSize);
+            }
+        }
+
+        // === ONDA RAW (azul) — estilo original ===
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(antenna.x, antenna.y, rawRadius, 0, Math.PI * 2);
+        ctx.strokeStyle = 'rgba(41, 128, 185, 0.5)';
+        ctx.lineWidth = 2;
+        ctx.setLineDash([4, 4]);
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        var rawLabelAngle = -Math.PI / 4;
+        var rawLabelX = antenna.x + Math.cos(rawLabelAngle) * rawRadius;
+        var rawLabelY = antenna.y + Math.sin(rawLabelAngle) * rawRadius;
+        ctx.fillStyle = 'rgba(255,255,255,0.85)';
+        var rawLabel = 'Raw -100 dBm';
+        var rawLabelW = ctx.measureText(rawLabel).width;
+        ctx.fillRect(rawLabelX - rawLabelW/2 - 4, rawLabelY - 16, rawLabelW + 8, 14);
+        ctx.fillStyle = 'rgba(41, 128, 185, 0.9)';
+        ctx.font = 'bold 11px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(rawLabel, rawLabelX, rawLabelY - 6);
+
+        for (var r = wavePhase; r < rawRadius; r += 50) {
+            var rawIntensity = Math.max(0, 1 - r / rawRadius);
+            ctx.beginPath();
+            ctx.arc(antenna.x, antenna.y, r, 0, Math.PI * 2);
+            ctx.strokeStyle = 'rgba(52, 152, 219, ' + (rawIntensity * 0.2) + ')';
+            ctx.lineWidth = 1;
+            ctx.setLineDash([8, 12]);
+            ctx.stroke();
+            ctx.setLineDash([]);
+        }
+        ctx.restore();
+
+        // === ONDA DE CALIBRACIÓN (verde) — estilo original ===
+        ctx.save();
+        ctx.beginPath();
+        ctx.rect(0, 0, canvas.width, canvas.height);
+        ctx.clip();
+        for (var r = wavePhase; r < calRadius; r += 35) {
+            var calIntensity = Math.max(0, 1 - r / calRadius);
+            ctx.beginPath();
+            ctx.arc(antenna.x, antenna.y, r, 0, Math.PI * 2);
+            ctx.strokeStyle = 'rgba(44, 173, 120, ' + (calIntensity * 0.35) + ')';
+            ctx.lineWidth = 1.5;
+            ctx.setLineDash([10, 8]);
+            ctx.stroke();
+            ctx.setLineDash([]);
+        }
+        ctx.restore();
+
+        // 4. Draw store walls + labels ON TOP of waves (so walls are visible)
+        drawStoreWalls(storeBoundsA, "TIENDA A", "ENTRADA");
+        drawStoreWalls(storeBoundsB, "TIENDA B (VECINA)", "ENTRADA");
+
+        // Draw wall
+        drawWall();
+
+        // Shelves
+        ctx.fillStyle = "#34495E";
+        shelves.forEach(s => {
+            ctx.fillRect(s.x, s.y, s.w, s.h);
+            ctx.strokeStyle = "#2C3E50";
+            ctx.strokeRect(s.x, s.y, s.w, s.h);
+            ctx.fillStyle = "#FFFFFF";
+            ctx.font = "10px sans-serif";
+            ctx.textAlign = "center";
+            ctx.fillText("ANAQUEL", s.x + s.w/2, s.y + s.h/2 + 3);
+            ctx.fillStyle = "#34495E";
+        });
+
+        // Antenna
+        ctx.save();
+        ctx.fillStyle = "#8E44AD";
+        ctx.beginPath();
+        ctx.arc(antenna.x, antenna.y, 12, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = "#9B59B6";
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(antenna.x, antenna.y, 16 + Math.sin(Date.now() / 200) * 3, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.fillStyle = "#FFFFFF";
+        ctx.font = "bold 10px sans-serif";
+        ctx.textAlign = "center";
+        ctx.fillText("ANTENA", antenna.x, antenna.y + 3);
+        ctx.restore();
+
+        // People & metrics
+        let rawEntriesA = 0, rawEntriesB = 0;
+        let visitasA = 0, visitasB = 0;
+        let falsasVisitas = 0;
+
+        people.forEach((p) => {
+            const signal = calculateSignalAtVecina(p.x, p.y);
+            const rawSignal = calculateRawSignalAtVecina(p.x, p.y);
+            const inA = isInStoreA(p.x, p.y);
+            const inB = isInStoreB(p.x, p.y);
+
+            // Raw entries
+            if (rawSignal >= RAW_DBM) {
+                if (inA) rawEntriesA++;
+                else if (inB) rawEntriesB++;
+            }
+
+            // Visitas (calibración)
+            const isVisita = signal >= antenna.cutoffdBm;
+            if (isVisita) {
+                if (inA) visitasA++;
+                else if (inB) {
+                    visitasB++;
+                    falsasVisitas++; // Persona en B contada como visita = falsa visita
+                }
+            }
+
+            // Color coding
+            var personColor, bgColor, labelIcon, labelColor;
+            if (isVisita) {
+                if (inB) {
+                    // Falsa visita (persona de tienda B detectada como visita en A)
+                    personColor = "#E74C3C";
+                    bgColor = "rgba(231, 76, 60, 0.30)";
+                    labelIcon = "!";
+                    labelColor = "#C0392B";
+                } else {
+                    personColor = "#2CAD78";
+                    bgColor = "rgba(44, 173, 120, 0.25)";
+                    labelIcon = "✓";
+                    labelColor = "#1E8A5C";
+                }
+            } else if (rawSignal >= RAW_DBM) {
+                personColor = "#F39C12";
+                bgColor = "rgba(243, 156, 18, 0.25)";
+                labelIcon = "👁";
+                labelColor = "#B7950B";
+            } else {
+                personColor = "#E74C3C";
+                bgColor = "rgba(231, 76, 60, 0.20)";
+                labelIcon = "✗";
+                labelColor = "#C0392B";
+            }
+
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, 14, 0, Math.PI * 2);
+            ctx.fillStyle = bgColor;
+            ctx.fill();
+
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, 9, 0, Math.PI * 2);
+            ctx.fillStyle = personColor;
+            ctx.fill();
+
+            ctx.fillStyle = "#FFFFFF";
+            ctx.font = "bold 9px sans-serif";
+            ctx.textAlign = "center";
+            ctx.fillText(labelIcon, p.x, p.y + 3);
+
+            ctx.fillStyle = labelColor;
+            ctx.font = "9px sans-serif";
+            ctx.fillText(Math.round(signal) + " dBm", p.x, p.y - 16);
+        });
+
+        // Update metrics
+        var totalA = people.filter(p => isInStoreA(p.x, p.y)).length;
+        var coverageRatio = totalA > 0 ? Math.round((visitasA / totalA) * 100) : 100;
+
+        var mRawA = document.getElementById('vecina-metric-raw-a');
+        var mRawB = document.getElementById('vecina-metric-raw-b');
+        var mVisA = document.getElementById('vecina-metric-visitas-a');
+        var mVisB = document.getElementById('vecina-metric-visitas-b');
+        var mFalsas = document.getElementById('vecina-metric-falsas');
+        var mCob = document.getElementById('vecina-metric-cobertura');
+        var badge = document.getElementById('vecina-status-badge');
+
+        if (mRawA) mRawA.innerText = rawEntriesA;
+        if (mRawB) mRawB.innerText = rawEntriesB;
+        if (mVisA) mVisA.innerText = visitasA;
+        if (mVisB) mVisB.innerText = visitasB;
+        if (mFalsas) mFalsas.innerText = falsasVisitas;
+        if (mCob) mCob.innerText = coverageRatio + "%";
+
+        if (badge) {
+            if (falsasVisitas === 0 && visitasB === 0) {
+                badge.innerText = "SIN CONTAMINACIÓN";
+                badge.className = "badge badge-green";
+            } else {
+                badge.innerText = "CONTAMINACIÓN CRUZADA";
+                badge.className = "badge badge-red";
+            }
+        }
+    }
+
+    function setupCanvasEvents() {
+        if (!canvas) return;
+
+        const getPos = (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            return {
+                x: (clientX - rect.left) * scaleX,
+                y: (clientY - rect.top) * scaleY
+            };
+        };
+
+        const handleDown = (e) => {
+            const pos = getPos(e);
+            if (!isInAnyStore(pos.x, pos.y)) return;
+
+            const hitIndex = people.findIndex(p => Math.hypot(p.x - pos.x, p.y - pos.y) < 16);
+            if (hitIndex !== -1) {
+                selectedElement = { type: 'person', index: hitIndex };
+                isDragging = true;
+                return;
+            }
+
+            if (mode === 'person') {
+                people.push({ x: pos.x, y: pos.y });
+            } else if (mode === 'shelf') {
+                shelves.push({ x: pos.x - 40, y: pos.y - 15, w: 80, h: 30 });
+            }
+        };
+
+        const handleMove = (e) => {
+            if (!isDragging || !selectedElement) return;
+            const pos = getPos(e);
+            if (isInAnyStore(pos.x, pos.y)) {
+                if (selectedElement.type === 'person') {
+                    people[selectedElement.index].x = pos.x;
+                    people[selectedElement.index].y = pos.y;
+                }
+            }
+        };
+
+        const handleUp = () => {
+            isDragging = false;
+            selectedElement = null;
+        };
+
+        canvas.addEventListener('mousedown', handleDown);
+        canvas.addEventListener('mousemove', handleMove);
+        canvas.addEventListener('mouseup', handleUp);
+
+        canvas.addEventListener('touchstart', (e) => { e.preventDefault(); handleDown(e); }, { passive: false });
+        canvas.addEventListener('touchmove', (e) => { e.preventDefault(); handleMove(e); }, { passive: false });
+        canvas.addEventListener('touchend', handleUp);
+    }
+
+    return {
+        initSim: initSim,
+        setMode: setMode,
+        updatePower: updatePower,
+        clearElements: clearElements,
+        loadPreset: loadPreset,
+        toggleAnimation: toggleAnimation
+    };
+})();
+
+// Initialize on page load
+window.addEventListener('load', () => {
+    RFSimulator.initSim();
+});
+</script>
+</body>
+</html>
