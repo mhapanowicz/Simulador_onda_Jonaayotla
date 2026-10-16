@@ -1396,17 +1396,17 @@
                     <div class="control-group">
                         <div class="control-label">
                             <span>Potencia Paseantes (dBm)</span>
-                            <span class="value" id="red-paseantes-val">-60</span>
+                            <span class="value" id="red-paseantes-val">-85</span>
                         </div>
-                        <input type="range" id="red-paseantes-slider" min="0" max="100" value="60" step="1" oninput="ReduccionSimulator.updatePaseantes(this.value)">
+                        <input type="range" id="red-paseantes-slider" min="0" max="100" value="85" step="1" oninput="ReduccionSimulator.updatePaseantes(this.value)">
                         <p style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">Rango: 0 (lejos) a 100 (cerca). Define el umbral de detección de paseantes.</p>
                     </div>
                     <div class="control-group">
                         <div class="control-label">
                             <span>Potencia Visitas (dBm)</span>
-                            <span class="value" id="red-visitas-val">-70</span>
+                            <span class="value" id="red-visitas-val">-75</span>
                         </div>
-                        <input type="range" id="red-visitas-slider" min="0" max="100" value="70" step="1" oninput="ReduccionSimulator.updateVisitas(this.value)">
+                        <input type="range" id="red-visitas-slider" min="0" max="100" value="75" step="1" oninput="ReduccionSimulator.updateVisitas(this.value)">
                         <p style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">Siempre ≤ paseantes. Define el umbral de detección de visitas.</p>
                     </div>
                 </div>
@@ -1446,7 +1446,7 @@
                 <div class="rf-card">
                     <h3>ℹ️ Info</h3>
                     <p style="font-size: 12.5px; color: var(--text-muted); line-height: 1.5;">
-                        Escala: 1 px = 0.25 m. Tienda ~100 m² (10x10m). Raw cubre ~150 m². Cada persona atenúa <strong>2.8 dB</strong>, cada anaquel <strong>5 dB</strong>. Paredes de concreto <strong>20 dB</strong>, ventanas <strong>8 dB</strong>. Lluvia suma atenuación global. Antena movible: clic en "Mover Antena" y arrastrá.
+                        Escala: 1 px = 0.05 m. Tienda 100 m² (10x10m). Raw tipo router (~15m). Cada persona atenúa <strong>2.8 dB</strong>, cada anaquel <strong>5 dB</strong>. Paredes de concreto <strong>20 dB</strong>, ventanas <strong>8 dB</strong>. Lluvia suma atenuación global. Antena movible: clic en "Mover Antena" y arrastrá.
                     </p>
                 </div>
             </div>
@@ -2898,24 +2898,26 @@ const ReduccionSimulator = (function() {
     // Canvas 900x600. Tienda 100x100 px. Raw cubre 150 m² => radio que cubra ~150 m²
     // 150 m² => círculo de área 150 m² => r = sqrt(150/π) = 6.9 m = 69 px a 0.1m/px
 
-    var PX_PER_METER = 10; // 1 px = 0.1 m
+    // Escala más cercana: 1 px = 0.05 m (20 px = 1 m)
+    // Tienda 10m x 10m = 200x200 px (ocupa buena parte del canvas)
+    var PX_PER_METER = 20; // 1 px = 0.05 m
     var antenna = { x: 450, y: 300 };
 
-    // Una sola tienda: 10m x 10m = 100 m² => 100x100 px
-    var store = { x: 400, y: 250, width: 100, height: 100, wallThickness: 6 };
+    // Una sola tienda: 10m x 10m = 100 m² => 200x200 px
+    var store = { x: 350, y: 200, width: 200, height: 200, wallThickness: 8 };
     var WALL_ATTEN = 20;
     var WINDOW_ATTEN = 8;
 
-    // Ventanas en la tienda
+    // Ventanas en la tienda (posiciones absolutas en px)
     var windows = [
-        { wall: 'left',   start: 270, end: 290 },  // ventana izquierda
-        { wall: 'bottom', start: 430, end: 470 }   // ventana abajo
+        { wall: 'left',   start: 250, end: 290 },  // ventana izquierda (~2m)
+        { wall: 'bottom', start: 420, end: 480 }   // ventana abajo (~3m)
     ];
 
     // Potencias: 0-100 donde 100 = más sensible (ve más lejos)
     // En dBm: valor = -potencia
-    var paseantesPotencia = 60;
-    var visitasPotencia = 70;
+    var paseantesPotencia = 85;
+    var visitasPotencia = 75;
     var lluviaAtten = 0;
     var tempAtten = 0;
 
@@ -2977,23 +2979,28 @@ const ReduccionSimulator = (function() {
 
     function loadPreset(type) {
         people = [];
+        // Anaqueles dentro de la tienda (200x200, x:350-550, y:200-400)
         shelves = [
-            { x: 420, y: 270, w: 25, h: 8 },
-            { x: 460, y: 320, w: 25, h: 8 }
+            { x: 380, y: 240, w: 40, h: 12 },
+            { x: 480, y: 240, w: 40, h: 12 },
+            { x: 380, y: 340, w: 40, h: 12 },
+            { x: 480, y: 340, w: 40, h: 12 }
         ];
         if (type === 'empty') {
         } else if (type === 'low') {
-            for (var i=0;i<3;i++) people.push({x:410+Math.random()*80, y:260+Math.random()*80});
-            for (var i2=0;i2<4;i2++) people.push({x:100+Math.random()*700, y:100+Math.random()*100});
-            for (var i3=0;i3<3;i3++) people.push({x:100+Math.random()*700, y:480+Math.random()*80});
+            // Pocas personas dentro
+            for (var i=0;i<4;i++) people.push({x:360+Math.random()*180, y:210+Math.random()*180});
+            // Paseantes fuera (cerca de la tienda)
+            for (var i2=0;i2<5;i2++) people.push({x:150+Math.random()*600, y:80+Math.random()*90});
+            for (var i3=0;i3<4;i3++) people.push({x:150+Math.random()*600, y:430+Math.random()*80});
         } else if (type === 'average') {
-            for (var i=0;i<8;i++) people.push({x:410+Math.random()*80, y:260+Math.random()*80});
-            for (var i2=0;i2<10;i2++) people.push({x:50+Math.random()*800, y:80+Math.random()*120});
-            for (var i3=0;i3<8;i3++) people.push({x:50+Math.random()*800, y:470+Math.random()*90});
+            for (var i=0;i<10;i++) people.push({x:360+Math.random()*180, y:210+Math.random()*180});
+            for (var i2=0;i2<12;i2++) people.push({x:100+Math.random()*700, y:60+Math.random()*110});
+            for (var i3=0;i3<10;i3++) people.push({x:100+Math.random()*700, y:430+Math.random()*90});
         } else if (type === 'high') {
-            for (var i=0;i<20;i++) people.push({x:410+Math.random()*80, y:260+Math.random()*80});
-            for (var i2=0;i2<25;i2++) people.push({x:50+Math.random()*800, y:80+Math.random()*120});
-            for (var i3=0;i3<20;i3++) people.push({x:50+Math.random()*800, y:470+Math.random()*90});
+            for (var i=0;i<25;i++) people.push({x:360+Math.random()*180, y:210+Math.random()*180});
+            for (var i2=0;i2<25;i2++) people.push({x:80+Math.random()*740, y:60+Math.random()*110});
+            for (var i3=0;i3<20;i3++) people.push({x:80+Math.random()*740, y:430+Math.random()*90});
         }
     }
 
@@ -3004,12 +3011,40 @@ const ReduccionSimulator = (function() {
     function potenciaToDbm(p) { return -p; }
 
     // Path loss: Free space ~20*log10(d) + constante
-    // A 1m (10px): ~20 dB. A 10m (100px): ~40 dB. A 15m (150px): ~43.5 dB
-    // Usamos: PL(d) = 20*log10(d_meters) + 20
+    // Router WiFi típico: ~-90 dBm a 15-20m en espacio libre
+    // PL(1m) = 20*log10(1) + 20 = 20 dB => señal a 1m = -20 dBm (asumiendo 0 dBm TX)
+    // PL(10m) = 20*log10(10) + 20 = 40 dB => señal a 10m = -40 dBm
+    // PL(20m) = 20*log10(20) + 20 = 46 dB => señal a 20m = -46 dBm
+    // Raw threshold -100 dBm => cubre hasta ~10^(80/20) = 10^4 = 10000m... demasiado
+    // Para que sea realista (router cubre ~tienda y media), ajustamos:
+    // PL(d) = 20*log10(d_m) + 40 (constante mayor = router menos potente)
+    // A 10m: 60 dB => -60 dBm. A 15m: 63.5 dB. A 20m: 66 dB.
+    // Raw -100 dBm => 10^(60/20) = 1000m... sigue siendo mucho.
+    // Mejor: PL(d) = 25*log10(d_m) + 45 (modelo indoor ITU)
+    // A 5m: 62.4 dB. A 10m: 70 dB. A 15m: 74.3 dB. A 20m: 77 dB.
+    // Raw -100 => 10^(55/25) = 10^2.2 = 158m... mucho.
+    // Simplificamos: el raw se calibra a -100 dBm y el modelo da el radio correcto
+    // PL(d) = 30*log10(d_m) + 40
+    // A 1m: 40 dB. A 10m: 70 dB. A 15m: 75.3 dB. A 20m: 79 dB.
+    // Raw -100 => 10^(60/30) = 100m => 2000px... sigue grande.
+    // Solución práctica: el raw tiene un alcance máximo fijado (no por path loss puro)
+    // Router real: ~15m indoors. Raw = -100 dBm con PL que dé ~15m.
+    // Modelo indoor ITU simplificado: PL(d) = 20*log10(d) + 40 + 3*floor(d/10)
+    // A 1m: 40 dB. A 5m: 54 dB. A 10m: 60 dB. A 12m: 62.4 dB. A 15m: 67.5 dB.
+    // Raw -100 dBm: 10^(60/20) = 1000m... demasiado.
+    // En cambio, fijamos el raw con un alcance práctico de ~15m (router típico indoor)
+    // Usamos: PL(d) = 35*log10(d_m) + 45
+    // A 1m: 45. A 5m: 69.4. A 10m: 80. A 15m: 86.3. A 18m: 89.
+    // Raw -100 => 10^(55/35) = 10^1.57 = 37m... 
+    // OK, más simple: PL(d) = 40*log10(d_m) + 40
+    // A 1m: 40. A 5m: 67.9. A 10m: 80. A 12m: 83.2. A 15m: 87.
+    // Raw -100: 10^(60/40) = 10^1.5 = 31.6m... razonable para router potente.
+    // Queremos ~15m para raw: 10^(55/40) = 10^1.375 = 23.7m. Cerca.
+    // PL(d) = 45*log10(d_m) + 45 => A 15m: 98.2 dB. A 18m: 101.5. Raw -100 => ~17m. Perfecto.
     function pathLossAt(distPx) {
         var distM = distPx / PX_PER_METER;
-        if (distM < 0.5) return 0;
-        return 20 * Math.log10(distM) + 20;
+        if (distM < 0.3) return 0;
+        return 45 * Math.log10(distM) + 45;
     }
 
     function calcAtten(x, y) {
@@ -3240,12 +3275,12 @@ const ReduccionSimulator = (function() {
         // Indicador de escala
         ctx.fillStyle = 'rgba(0,0,0,0.5)';
         ctx.font = '10px sans-serif'; ctx.textAlign = 'left';
-        ctx.fillText('Escala: 1 px = 0.1 m | Tienda: 10m x 10m = 100 m\u00b2', 8, canvas.height - 8);
+        ctx.fillText('Escala: 1 px = 0.05 m | Tienda: 10m x 10m = 100 m\u00b2', 8, canvas.height - 8);
         // Barra de escala
         ctx.strokeStyle = '#333'; ctx.lineWidth = 2;
-        ctx.beginPath(); ctx.moveTo(canvas.width - 60, canvas.height - 15); ctx.lineTo(canvas.width - 10, canvas.height - 15); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(canvas.width - 110, canvas.height - 15); ctx.lineTo(canvas.width - 10, canvas.height - 15); ctx.stroke();
         ctx.fillStyle = '#333'; ctx.font = '9px sans-serif'; ctx.textAlign = 'center';
-        ctx.fillText('5 m', canvas.width - 35, canvas.height - 5);
+        ctx.fillText('5 m', canvas.width - 60, canvas.height - 5);
     }
 
     function drawWave(radius, strokeColor, dash, label, labelAngle) {
@@ -3339,7 +3374,7 @@ const ReduccionSimulator = (function() {
             var hit = people.findIndex(function(p) { return Math.hypot(p.x - pos.x, p.y - pos.y) < 12; });
             if (hit !== -1) { draggedPerson = hit; isDragging = true; return; }
             if (mode === 'person') people.push({x: pos.x, y: pos.y});
-            else if (mode === 'shelf') shelves.push({x: pos.x - 15, y: pos.y - 5, w: 30, h: 10});
+            else if (mode === 'shelf') shelves.push({x: pos.x - 20, y: pos.y - 6, w: 40, h: 12});
         };
         var handleMove = function(e) {
             var pos = getPos(e);
