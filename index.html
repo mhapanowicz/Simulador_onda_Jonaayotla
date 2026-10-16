@@ -1341,7 +1341,7 @@
         <div class="content-card" style="border-left: 4px solid var(--getin-green); margin-bottom: 20px;">
             <h3 style="font-size: 16px; margin-bottom: 6px; color: var(--getin-green-dark); font-weight: 700;">¿Cómo funciona este simulador?</h3>
             <p style="font-size: 14px; color: var(--text); line-height: 1.55;">
-                La antena emite 3 ondas: <strong style="color:#2980B9;">Raw</strong> (0 a -100 dBm, visión natural), <strong style="color:#E74C3C;">Paseantes</strong> (rojo, calibrable) y <strong style="color:#2CAD78;">Visitas</strong> (verde, calibrable, siempre ≤ paseantes). Todo afecta a todas las ondas: personas, anaqueles, paredes de concreto (20 dB), ventanas de vidrio (8 dB) y clima. Mové la antena, agregá personas y observá cómo se reducen las burbujas.
+                La antena emite 3 ondas: <strong style="color:#2980B9;">Raw</strong> (señal natural, cubre tienda y media ~150 m²), <strong style="color:#E74C3C;">Paseantes</strong> (rojo, calibrable) y <strong style="color:#2CAD78;">Visitas</strong> (verde, calibrable, siempre ≤ paseantes). Una sola tienda de 100 m² (10x10m). Todo afecta a todas las ondas: personas, anaqueles, paredes, ventanas y clima.
             </p>
         </div>
 
@@ -1446,7 +1446,7 @@
                 <div class="rf-card">
                     <h3>ℹ️ Info</h3>
                     <p style="font-size: 12.5px; color: var(--text-muted); line-height: 1.5;">
-                        Cada persona atenúa <strong>2.8 dB</strong>, cada anaquel <strong>5 dB</strong>. Las paredes de concreto <strong>20 dB</strong> y las ventanas <strong>8 dB</strong>. La lluvia suma atenuación global. La antena es movible: clic en "Mover Antena" y arrastrá.
+                        Escala: 1 px = 0.25 m. Tienda ~100 m² (10x10m). Raw cubre ~150 m². Cada persona atenúa <strong>2.8 dB</strong>, cada anaquel <strong>5 dB</strong>. Paredes de concreto <strong>20 dB</strong>, ventanas <strong>8 dB</strong>. Lluvia suma atenuación global. Antena movible: clic en "Mover Antena" y arrastrá.
                     </p>
                 </div>
             </div>
@@ -2873,7 +2873,9 @@ const VecinaSimulator = (function() {
     };
 })();
 
-// --- MODULE 3: REDUCCIÓN DE ONDA SIMULATOR ---
+
+
+// --- MODULE 3: REDUCCIÓN DE ONDA SIMULATOR (v2: 1 tienda, ondas realistas) ---
 const ReduccionSimulator = (function() {
     var canvas, ctx;
     var mode = 'person';
@@ -2886,24 +2888,32 @@ const ReduccionSimulator = (function() {
     var isAnimRunning = false;
     var isPaused = false;
 
-    var antenna = { x: 300, y: 320 };
+    // Escala: 1 px = 0.25 m  =>  4 px = 1 m
+    // Tienda de 100 m² = 10m x 10m = 40px x 40px... pero la hacemos más visible:
+    // Usamos escala más generosa: 1 px = 0.2 m => 5 px = 1 m
+    // Tienda 10m x 10m = 50px x 50px. Aun chico. 
+    // Mejor: 1 px = 0.15 m => tienda 10x10m = ~67px. 
+    // Para que se vea bien en canvas 900x600, usemos tienda ~200x200 px = 30m x 30m = 900 m²
+    // Pero el pidió 100 m²... OK, tienda 100 m² = 10x10m, a escala 1px=0.1m => 100x100px
+    // Canvas 900x600. Tienda 100x100 px. Raw cubre 150 m² => radio que cubra ~150 m²
+    // 150 m² => círculo de área 150 m² => r = sqrt(150/π) = 6.9 m = 69 px a 0.1m/px
 
-    // Tiendas más pequeñas (vista dron alejada)
-    var storeA = { x: 150, y: 200, width: 280, height: 220, wallThickness: 10 };
-    var storeB = { x: 470, y: 200, width: 280, height: 220, wallThickness: 10 };
-    var wallX1 = 430, wallX2 = 445;
+    var PX_PER_METER = 10; // 1 px = 0.1 m
+    var antenna = { x: 450, y: 300 };
+
+    // Una sola tienda: 10m x 10m = 100 m² => 100x100 px
+    var store = { x: 400, y: 250, width: 100, height: 100, wallThickness: 6 };
     var WALL_ATTEN = 20;
     var WINDOW_ATTEN = 8;
 
-    var windowsA = [
-        { wall: 'left',   start: 260, end: 310 },
-        { wall: 'bottom', start: 250, end: 300 }
-    ];
-    var windowsB = [
-        { wall: 'right',  start: 260, end: 310 },
-        { wall: 'bottom', start: 570, end: 620 }
+    // Ventanas en la tienda
+    var windows = [
+        { wall: 'left',   start: 270, end: 290 },  // ventana izquierda
+        { wall: 'bottom', start: 430, end: 470 }   // ventana abajo
     ];
 
+    // Potencias: 0-100 donde 100 = más sensible (ve más lejos)
+    // En dBm: valor = -potencia
     var paseantesPotencia = 60;
     var visitasPotencia = 70;
     var lluviaAtten = 0;
@@ -2934,21 +2944,21 @@ const ReduccionSimulator = (function() {
         if (el) el.innerText = '-' + paseantesPotencia;
         if (visitasPotencia < paseantesPotencia) {
             visitasPotencia = paseantesPotencia;
-            var vSlider = document.getElementById('red-visitas-slider');
-            var vVal = document.getElementById('red-visitas-val');
-            if (vSlider) vSlider.value = visitasPotencia;
-            if (vVal) vVal.innerText = '-' + visitasPotencia;
+            var vS = document.getElementById('red-visitas-slider');
+            var vV = document.getElementById('red-visitas-val');
+            if (vS) vS.value = visitasPotencia;
+            if (vV) vV.innerText = '-' + visitasPotencia;
         }
-        var vSlider2 = document.getElementById('red-visitas-slider');
-        if (vSlider2) vSlider2.max = paseantesPotencia;
+        var vS2 = document.getElementById('red-visitas-slider');
+        if (vS2) vS2.max = paseantesPotencia;
     }
 
     function updateVisitas(val) {
         visitasPotencia = Math.min(parseInt(val), paseantesPotencia);
         var el = document.getElementById('red-visitas-val');
         if (el) el.innerText = '-' + visitasPotencia;
-        var vSlider = document.getElementById('red-visitas-slider');
-        if (vSlider) vSlider.value = visitasPotencia;
+        var vS = document.getElementById('red-visitas-slider');
+        if (vS) vS.value = visitasPotencia;
     }
 
     function updateClima() {
@@ -2968,43 +2978,43 @@ const ReduccionSimulator = (function() {
     function loadPreset(type) {
         people = [];
         shelves = [
-            { x: 200, y: 240, w: 120, h: 20 },
-            { x: 200, y: 320, w: 120, h: 20 },
-            { x: 520, y: 240, w: 120, h: 20 },
-            { x: 520, y: 320, w: 120, h: 20 }
+            { x: 420, y: 270, w: 25, h: 8 },
+            { x: 460, y: 320, w: 25, h: 8 }
         ];
         if (type === 'empty') {
         } else if (type === 'low') {
-            people.push({x:250,y:280},{x:320,y:350},{x:570,y:280},{x:630,y:350});
-            people.push({x:100,y:150},{x:800,y:150},{x:450,y:100});
+            for (var i=0;i<3;i++) people.push({x:410+Math.random()*80, y:260+Math.random()*80});
+            for (var i2=0;i2<4;i2++) people.push({x:100+Math.random()*700, y:100+Math.random()*100});
+            for (var i3=0;i3<3;i3++) people.push({x:100+Math.random()*700, y:480+Math.random()*80});
         } else if (type === 'average') {
-            for (var i=0;i<8;i++) people.push({x:170+Math.random()*230,y:220+Math.random()*180});
-            for (var i2=0;i2<6;i2++) people.push({x:490+Math.random()*230,y:220+Math.random()*180});
-            for (var i3=0;i3<8;i3++) people.push({x:50+Math.random()*850,y:50+Math.random()*140});
-            for (var i4=0;i4<5;i4++) people.push({x:50+Math.random()*850,y:460+Math.random()*120});
+            for (var i=0;i<8;i++) people.push({x:410+Math.random()*80, y:260+Math.random()*80});
+            for (var i2=0;i2<10;i2++) people.push({x:50+Math.random()*800, y:80+Math.random()*120});
+            for (var i3=0;i3<8;i3++) people.push({x:50+Math.random()*800, y:470+Math.random()*90});
         } else if (type === 'high') {
-            for (var i=0;i<25;i++) people.push({x:170+Math.random()*230,y:220+Math.random()*180});
-            for (var i2=0;i2<20;i2++) people.push({x:490+Math.random()*230,y:220+Math.random()*180});
-            for (var i3=0;i3<20;i3++) people.push({x:50+Math.random()*850,y:50+Math.random()*140});
-            for (var i4=0;i4<15;i4++) people.push({x:50+Math.random()*850,y:460+Math.random()*120});
+            for (var i=0;i<20;i++) people.push({x:410+Math.random()*80, y:260+Math.random()*80});
+            for (var i2=0;i2<25;i2++) people.push({x:50+Math.random()*800, y:80+Math.random()*120});
+            for (var i3=0;i3<20;i3++) people.push({x:50+Math.random()*800, y:470+Math.random()*90});
         }
     }
 
-    function isInStoreA(x,y) { return x>=storeA.x && x<=storeA.x+storeA.width && y>=storeA.y && y<=storeA.y+storeA.height; }
-    function isInStoreB(x,y) { return x>=storeB.x && x<=storeB.x+storeB.width && y>=storeB.y && y<=storeB.y+storeB.height; }
+    function isInStore(x, y) {
+        return x >= store.x && x <= store.x + store.width && y >= store.y && y <= store.y + store.height;
+    }
 
     function potenciaToDbm(p) { return -p; }
 
-    function pathLossAt(dist) {
-        if (dist < 5) return 0;
-        if (dist <= 600) return 14.5 * Math.log10(dist);
-        var t = (dist - 600) / 500;
-        return 14.5 * Math.log10(600) + t * 60;
+    // Path loss: Free space ~20*log10(d) + constante
+    // A 1m (10px): ~20 dB. A 10m (100px): ~40 dB. A 15m (150px): ~43.5 dB
+    // Usamos: PL(d) = 20*log10(d_meters) + 20
+    function pathLossAt(distPx) {
+        var distM = distPx / PX_PER_METER;
+        if (distM < 0.5) return 0;
+        return 20 * Math.log10(distM) + 20;
     }
 
     function calcAtten(x, y) {
-        var ant = {x:antenna.x, y:antenna.y};
-        var tgt = {x:x, y:y};
+        var ant = {x: antenna.x, y: antenna.y};
+        var tgt = {x: x, y: y};
         var total = lluviaAtten + tempAtten;
 
         people.forEach(function(p) {
@@ -3015,82 +3025,96 @@ const ReduccionSimulator = (function() {
             if (lineIntersectsRect(ant, tgt, s)) total += 5.0;
         });
 
-        var inA_ant = isInStoreA(ant.x, ant.y);
-        var inA_pt = isInStoreA(tgt.x, tgt.y);
-        var inB_ant = isInStoreB(ant.x, ant.y);
-        var inB_pt = isInStoreB(tgt.x, tgt.y);
-        var crossesDiv = (ant.x < wallX1 && tgt.x > wallX2) || (ant.x > wallX2 && tgt.x < wallX1);
+        var inAnt = isInStore(ant.x, ant.y);
+        var inPt = isInStore(tgt.x, tgt.y);
+        if (inAnt !== inPt) total += wallAttenForExit(store, windows, ant, tgt);
 
-        if (crossesDiv) {
-            total += WALL_ATTEN;
-        } else {
-            if (inA_ant && !inA_pt) total += wallAttenForExit(storeA, windowsA, ant, tgt);
-            if (!inA_ant && inA_pt) total += wallAttenForExit(storeA, windowsA, ant, tgt);
-            if (inB_ant && !inB_pt) total += wallAttenForExit(storeB, windowsB, ant, tgt);
-            if (!inB_ant && inB_pt) total += wallAttenForExit(storeB, windowsB, ant, tgt);
-        }
         return total;
     }
 
-    function wallAttenForExit(bounds, windows, ant, tgt) {
-        if ((ant.x<=bounds.x && tgt.x>=bounds.x)||(ant.x>=bounds.x && tgt.x<=bounds.x)) {
-            var t=(bounds.x-ant.x)/(tgt.x-ant.x); var cy=ant.y+t*(tgt.y-ant.y);
-            if (cy>=bounds.y && cy<=bounds.y+bounds.height) return passesThroughWindow(windows,'left',cy)?WINDOW_ATTEN:WALL_ATTEN;
+    function wallAttenForExit(bounds, wins, ant, tgt) {
+        // Izquierda
+        if ((ant.x <= bounds.x && tgt.x >= bounds.x) || (ant.x >= bounds.x && tgt.x <= bounds.x)) {
+            var t = (bounds.x - ant.x) / (tgt.x - ant.x);
+            var cy = ant.y + t * (tgt.y - ant.y);
+            if (cy >= bounds.y && cy <= bounds.y + bounds.height)
+                return passesWindow(wins, 'left', cy) ? WINDOW_ATTEN : WALL_ATTEN;
         }
-        if ((ant.x<=bounds.x+bounds.width && tgt.x>=bounds.x+bounds.width)||(ant.x>=bounds.x+bounds.width && tgt.x<=bounds.x+bounds.width)) {
-            var t2=((bounds.x+bounds.width)-ant.x)/(tgt.x-ant.x); var cy2=ant.y+t2*(tgt.y-ant.y);
-            if (cy2>=bounds.y && cy2<=bounds.y+bounds.height) return passesThroughWindow(windows,'right',cy2)?WINDOW_ATTEN:WALL_ATTEN;
+        // Derecha
+        if ((ant.x <= bounds.x + bounds.width && tgt.x >= bounds.x + bounds.width) || (ant.x >= bounds.x + bounds.width && tgt.x <= bounds.x + bounds.width)) {
+            var t2 = ((bounds.x + bounds.width) - ant.x) / (tgt.x - ant.x);
+            var cy2 = ant.y + t2 * (tgt.y - ant.y);
+            if (cy2 >= bounds.y && cy2 <= bounds.y + bounds.height)
+                return passesWindow(wins, 'right', cy2) ? WINDOW_ATTEN : WALL_ATTEN;
         }
-        if ((ant.y<=bounds.y && tgt.y>=bounds.y)||(ant.y>=bounds.y && tgt.y<=bounds.y)) {
-            var t3=(bounds.y-ant.y)/(tgt.y-ant.y); var cx=ant.x+t3*(tgt.x-ant.x);
-            if (cx>=bounds.x && cx<=bounds.x+bounds.width) return passesThroughWindow(windows,'top',cx)?WINDOW_ATTEN:WALL_ATTEN;
+        // Arriba
+        if ((ant.y <= bounds.y && tgt.y >= bounds.y) || (ant.y >= bounds.y && tgt.y <= bounds.y)) {
+            var t3 = (bounds.y - ant.y) / (tgt.y - ant.y);
+            var cx = ant.x + t3 * (tgt.x - ant.x);
+            if (cx >= bounds.x && cx <= bounds.x + bounds.width)
+                return passesWindow(wins, 'top', cx) ? WINDOW_ATTEN : WALL_ATTEN;
         }
-        if ((ant.y<=bounds.y+bounds.height && tgt.y>=bounds.y+bounds.height)||(ant.y>=bounds.y+bounds.height && tgt.y<=bounds.y+bounds.height)) {
-            var t4=((bounds.y+bounds.height)-ant.y)/(tgt.y-ant.y); var cx2=ant.x+t4*(tgt.x-ant.x);
-            if (cx2>=bounds.x && cx2<=bounds.x+bounds.width) return passesThroughWindow(windows,'bottom',cx2)?WINDOW_ATTEN:WALL_ATTEN;
+        // Abajo
+        if ((ant.y <= bounds.y + bounds.height && tgt.y >= bounds.y + bounds.height) || (ant.y >= bounds.y + bounds.height && tgt.y <= bounds.y + bounds.height)) {
+            var t4 = ((bounds.y + bounds.height) - ant.y) / (tgt.y - ant.y);
+            var cx2 = ant.x + t4 * (tgt.x - ant.x);
+            if (cx2 >= bounds.x && cx2 <= bounds.x + bounds.width)
+                return passesWindow(wins, 'bottom', cx2) ? WINDOW_ATTEN : WALL_ATTEN;
         }
         return 0;
     }
 
-    function passesThroughWindow(windows, wall, pos) {
-        for (var i=0;i<windows.length;i++) { if (windows[i].wall===wall && pos>=windows[i].start && pos<=windows[i].end) return true; }
+    function passesWindow(wins, wall, pos) {
+        for (var i = 0; i < wins.length; i++) {
+            if (wins[i].wall === wall && pos >= wins[i].start && pos <= wins[i].end) return true;
+        }
         return false;
     }
 
     function signalAt(x, y) {
-        var dist = Math.hypot(x-antenna.x, y-antenna.y);
+        var dist = Math.hypot(x - antenna.x, y - antenna.y);
         if (dist < 5) return 0;
         return -pathLossAt(dist) - calcAtten(x, y);
     }
 
+    // Radio de onda: distancia donde signalAt = threshold (sin atenuación de obstáculos)
     function getWaveRadius(thresholdDbm) {
+        // -pathLossAt(dist) = thresholdDbm => pathLossAt(dist) = -thresholdDbm
+        // 20*log10(distM) + 20 = -thresholdDbm
+        // log10(distM) = (-thresholdDbm - 20) / 20
+        // distM = 10^((-thresholdDbm - 20)/20)
         var targetPl = -thresholdDbm;
-        if (targetPl <= 0) return 5;
-        if (targetPl <= 14.5 * Math.log10(600)) return Math.pow(10, targetPl/14.5);
-        var t = (targetPl - 14.5*Math.log10(600)) / 60;
-        return 600 + t * 500;
+        if (targetPl <= 20) return 5; // muy cerca
+        var distM = Math.pow(10, (targetPl - 20) / 20);
+        var distPx = distM * PX_PER_METER;
+        return Math.max(5, distPx);
     }
 
     function pointToSegmentDistance(p, a, b) {
-        var l2 = Math.hypot(a.x-b.x, a.y-b.y);
-        if (l2 === 0) return Math.hypot(p.x-a.x, p.y-a.y);
-        var t = ((p.x-a.x)*(b.x-a.x)+(p.y-a.y)*(b.y-a.y))/(l2*l2);
+        var l2 = Math.hypot(a.x - b.x, a.y - b.y);
+        if (l2 === 0) return Math.hypot(p.x - a.x, p.y - a.y);
+        var t = ((p.x - a.x) * (b.x - a.x) + (p.y - a.y) * (b.y - a.y)) / (l2 * l2);
         t = Math.max(0, Math.min(1, t));
-        return Math.hypot(p.x-(a.x+t*(b.x-a.x)), p.y-(a.y+t*(b.y-a.y)));
+        return Math.hypot(p.x - (a.x + t * (b.x - a.x)), p.y - (a.y + t * (b.y - a.y)));
     }
 
     function lineIntersectsRect(p1, p2, r) {
-        var lines = [[{x:r.x,y:r.y},{x:r.x+r.w,y:r.y}],[{x:r.x+r.w,y:r.y},{x:r.x+r.w,y:r.y+r.h}],[{x:r.x+r.w,y:r.y+r.h},{x:r.x,y:r.y+r.h}],[{x:r.x,y:r.y+r.h},{x:r.x,y:r.y}]];
-        return lines.some(function(l) { return linesIntersect(p1,p2,l[0],l[1]); });
+        var lines = [
+            [{x:r.x,y:r.y},{x:r.x+r.w,y:r.y}],
+            [{x:r.x+r.w,y:r.y},{x:r.x+r.w,y:r.y+r.h}],
+            [{x:r.x+r.w,y:r.y+r.h},{x:r.x,y:r.y+r.h}],
+            [{x:r.x,y:r.y+r.h},{x:r.x,y:r.y}]
+        ];
+        return lines.some(function(l) { return linesIntersect(p1, p2, l[0], l[1]); });
     }
 
-    function linesIntersect(a,b,c,d) {
-        var ccw = function(p1,p2,p3) { return (p3.y-p1.y)*(p2.x-p1.x) > (p2.y-p1.y)*(p3.x-p1.x); };
-        return (ccw(a,c,d)!==ccw(b,c,d)) && (ccw(a,b,c)!==ccw(a,b,d));
+    function linesIntersect(a, b, c, d) {
+        var ccw = function(p1, p2, p3) { return (p3.y - p1.y) * (p2.x - p1.x) > (p2.y - p1.y) * (p3.x - p1.x); };
+        return (ccw(a, c, d) !== ccw(b, c, d)) && (ccw(a, b, c) !== ccw(a, b, d));
     }
 
     function animate() {
-        if (!isPaused) wavePhase = (wavePhase + 0.3) % 40;
+        if (!isPaused) wavePhase = (wavePhase + 0.4) % 30;
         var tab = document.getElementById('tab-reduccion');
         if (tab && tab.classList.contains('active')) drawSim();
         requestAnimationFrame(animate);
@@ -3108,8 +3132,20 @@ const ReduccionSimulator = (function() {
     function drawSim() {
         if (!ctx) return;
         ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // Fondo
         ctx.fillStyle = '#F0F0F2';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // Grid de escala (cada 50px = 5m)
+        ctx.strokeStyle = 'rgba(0,0,0,0.04)';
+        ctx.lineWidth = 1;
+        for (var gx = 0; gx <= canvas.width; gx += 50) {
+            ctx.beginPath(); ctx.moveTo(gx, 0); ctx.lineTo(gx, canvas.height); ctx.stroke();
+        }
+        for (var gy = 0; gy <= canvas.height; gy += 50) {
+            ctx.beginPath(); ctx.moveTo(0, gy); ctx.lineTo(canvas.width, gy); ctx.stroke();
+        }
 
         var rawDbm = -100;
         var paseantesDbm = potenciaToDbm(paseantesPotencia);
@@ -3118,49 +3154,53 @@ const ReduccionSimulator = (function() {
         var paseantesRadius = getWaveRadius(paseantesDbm);
         var visitasRadius = getWaveRadius(visitasDbm);
 
+        // Piso de tienda
         ctx.fillStyle = '#FFFFFF';
-        ctx.fillRect(storeA.x, storeA.y, storeA.width, storeA.height);
-        ctx.fillRect(storeB.x, storeB.y, storeB.width, storeB.height);
+        ctx.fillRect(store.x, store.y, store.width, store.height);
 
-        var gridSize = 16;
-        for (var x=0; x<canvas.width; x+=gridSize) {
-            for (var y=0; y<canvas.height; y+=gridSize) {
-                var cx=x+gridSize/2, cy=y+gridSize/2;
+        // Heatmap cobertura
+        var gridSize = 10;
+        for (var x = 0; x < canvas.width; x += gridSize) {
+            for (var y = 0; y < canvas.height; y += gridSize) {
+                var cx = x + gridSize/2, cy = y + gridSize/2;
                 var sig = signalAt(cx, cy);
                 if (sig >= visitasDbm) ctx.fillStyle = 'rgba(44,173,120,0.18)';
                 else if (sig >= paseantesDbm) ctx.fillStyle = 'rgba(231,76,60,0.15)';
-                else if (sig >= rawDbm) ctx.fillStyle = 'rgba(41,128,185,0.10)';
-                else ctx.fillStyle = 'rgba(220,224,230,0.15)';
+                else if (sig >= rawDbm) ctx.fillStyle = 'rgba(41,128,185,0.08)';
+                else continue;
                 ctx.fillRect(x, y, gridSize, gridSize);
             }
         }
 
+        // 3 ondas
         drawWave(rawRadius, 'rgba(41,128,185,0.5)', [6,10], 'Raw -100 dBm', -Math.PI/4);
         drawWave(paseantesRadius, 'rgba(231,76,60,0.5)', [8,8], 'Paseantes '+paseantesDbm+' dBm', Math.PI/4);
         drawWave(visitasRadius, 'rgba(44,173,120,0.5)', [10,6], 'Visitas '+visitasDbm+' dBm', 0);
 
-        drawWalls(storeA, 'TIENDA A', windowsA, 'right');
-        drawWalls(storeB, 'TIENDA B', windowsB, 'left');
-        drawDividingWall();
+        // Paredes de la tienda
+        drawWalls(store, 'TIENDA (100 m\u00b2)', windows);
 
+        // Anaqueles
         ctx.fillStyle = '#34495E';
         shelves.forEach(function(s) {
             ctx.fillRect(s.x, s.y, s.w, s.h);
             ctx.strokeStyle = '#2C3E50'; ctx.strokeRect(s.x, s.y, s.w, s.h);
-            ctx.fillStyle = '#FFFFFF'; ctx.font = '9px sans-serif'; ctx.textAlign = 'center';
-            ctx.fillText('ANAQUEL', s.x+s.w/2, s.y+s.h/2+3);
+            ctx.fillStyle = '#FFFFFF'; ctx.font = '7px sans-serif'; ctx.textAlign = 'center';
+            ctx.fillText('ANQ', s.x + s.w/2, s.y + s.h/2 + 2);
             ctx.fillStyle = '#34495E';
         });
 
+        // Antena
         ctx.save();
         ctx.fillStyle = '#9B59B6';
-        ctx.beginPath(); ctx.arc(antenna.x, antenna.y, 10, 0, Math.PI*2); ctx.fill();
+        ctx.beginPath(); ctx.arc(antenna.x, antenna.y, 8, 0, Math.PI*2); ctx.fill();
         ctx.strokeStyle = '#9B59B6'; ctx.lineWidth = 2;
-        ctx.beginPath(); ctx.arc(antenna.x, antenna.y, 14+Math.sin(Date.now()/200)*3, 0, Math.PI*2); ctx.stroke();
-        ctx.fillStyle = '#FFFFFF'; ctx.font = 'bold 8px sans-serif'; ctx.textAlign = 'center';
-        ctx.fillText('ANT', antenna.x, antenna.y+3);
+        ctx.beginPath(); ctx.arc(antenna.x, antenna.y, 12 + Math.sin(Date.now()/200)*2, 0, Math.PI*2); ctx.stroke();
+        ctx.fillStyle = '#FFFFFF'; ctx.font = 'bold 7px sans-serif'; ctx.textAlign = 'center';
+        ctx.fillText('ANT', antenna.x, antenna.y + 2);
         ctx.restore();
 
+        // Personas + métricas
         var rawCount=0, paseantesCount=0, visitasCount=0;
         people.forEach(function(p) {
             var sig = signalAt(p.x, p.y);
@@ -3177,25 +3217,35 @@ const ReduccionSimulator = (function() {
             else if (inRaw) { color = '#F39C12'; icon = 'R'; }
             else { color = '#95A5A6'; icon = '\u2717'; }
 
-            ctx.beginPath(); ctx.arc(p.x, p.y, 12, 0, Math.PI*2);
+            ctx.beginPath(); ctx.arc(p.x, p.y, 10, 0, Math.PI*2);
             ctx.fillStyle = color + '33'; ctx.fill();
-            ctx.beginPath(); ctx.arc(p.x, p.y, 7, 0, Math.PI*2);
+            ctx.beginPath(); ctx.arc(p.x, p.y, 6, 0, Math.PI*2);
             ctx.fillStyle = color; ctx.fill();
-            ctx.fillStyle = '#FFFFFF'; ctx.font = 'bold 7px sans-serif'; ctx.textAlign = 'center';
-            ctx.fillText(icon, p.x, p.y+2);
+            ctx.fillStyle = '#FFFFFF'; ctx.font = 'bold 6px sans-serif'; ctx.textAlign = 'center';
+            ctx.fillText(icon, p.x, p.y + 2);
         });
 
-        var mRaw = document.getElementById('red-metric-raw');
-        var mPas = document.getElementById('red-metric-paseantes');
-        var mVis = document.getElementById('red-metric-visitas');
+        var mR = document.getElementById('red-metric-raw');
+        var mP = document.getElementById('red-metric-paseantes');
+        var mV = document.getElementById('red-metric-visitas');
         var badge = document.getElementById('red-status-badge');
-        if (mRaw) mRaw.innerText = rawCount;
-        if (mPas) mPas.innerText = paseantesCount;
-        if (mVis) mVis.innerText = visitasCount;
+        if (mR) mR.innerText = rawCount;
+        if (mP) mP.innerText = paseantesCount;
+        if (mV) mV.innerText = visitasCount;
         if (badge) {
-            if (visitasPotencia > paseantesPotencia) { badge.innerText = 'VISITAS > PASEANTES (INVALIDO)'; badge.className = 'badge badge-red'; }
-            else { badge.innerText = 'CALIBRACION OK'; badge.className = 'badge badge-green'; }
+            if (visitasPotencia > paseantesPotencia) { badge.innerText = 'VISITAS > PASEANTES (INV\u00c1LIDO)'; badge.className = 'badge badge-red'; }
+            else { badge.innerText = 'CALIBRACI\u00d3N OK'; badge.className = 'badge badge-green'; }
         }
+
+        // Indicador de escala
+        ctx.fillStyle = 'rgba(0,0,0,0.5)';
+        ctx.font = '10px sans-serif'; ctx.textAlign = 'left';
+        ctx.fillText('Escala: 1 px = 0.1 m | Tienda: 10m x 10m = 100 m\u00b2', 8, canvas.height - 8);
+        // Barra de escala
+        ctx.strokeStyle = '#333'; ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.moveTo(canvas.width - 60, canvas.height - 15); ctx.lineTo(canvas.width - 10, canvas.height - 15); ctx.stroke();
+        ctx.fillStyle = '#333'; ctx.font = '9px sans-serif'; ctx.textAlign = 'center';
+        ctx.fillText('5 m', canvas.width - 35, canvas.height - 5);
     }
 
     function drawWave(radius, strokeColor, dash, label, labelAngle) {
@@ -3204,102 +3254,92 @@ const ReduccionSimulator = (function() {
         ctx.beginPath(); ctx.arc(antenna.x, antenna.y, radius, 0, Math.PI*2);
         ctx.strokeStyle = strokeColor; ctx.lineWidth = 2;
         ctx.setLineDash([4,4]); ctx.stroke(); ctx.setLineDash([]);
-        for (var r=wavePhase; r<radius; r+=40) {
-            var intensity = Math.max(0, 1-r/radius);
+        for (var r = wavePhase; r < radius; r += 25) {
+            var intensity = Math.max(0, 1 - r / radius);
             ctx.beginPath(); ctx.arc(antenna.x, antenna.y, r, 0, Math.PI*2);
-            ctx.strokeStyle = strokeColor.replace(/[\d\.]+\)$/, (intensity*0.3)+')');
+            ctx.strokeStyle = strokeColor.replace(/[\d\.]+\)$/, (intensity * 0.3) + ')');
             ctx.lineWidth = 1.5; ctx.setLineDash(dash); ctx.stroke(); ctx.setLineDash([]);
         }
-        var lx = antenna.x + Math.cos(labelAngle)*radius;
-        var ly = antenna.y + Math.sin(labelAngle)*radius;
+        var lx = antenna.x + Math.cos(labelAngle) * radius;
+        var ly = antenna.y + Math.sin(labelAngle) * radius;
         ctx.fillStyle = 'rgba(255,255,255,0.85)';
         var lw = ctx.measureText(label).width;
-        ctx.fillRect(lx-lw/2-4, ly-16, lw+8, 14);
+        ctx.fillRect(lx - lw/2 - 4, ly - 16, lw + 8, 14);
         ctx.fillStyle = strokeColor.replace(/[\d\.]+\)$/, '1)');
         ctx.font = 'bold 10px sans-serif'; ctx.textAlign = 'center';
-        ctx.fillText(label, lx, ly-6);
+        ctx.fillText(label, lx, ly - 6);
         ctx.restore();
     }
 
-    function drawWalls(bounds, label, windows, skipWall) {
+    function drawWalls(bounds, label, wins) {
         ctx.strokeStyle = '#8B7355'; ctx.lineWidth = bounds.wallThickness;
-        if (skipWall!=='top') { ctx.beginPath(); ctx.moveTo(bounds.x-bounds.wallThickness/2, bounds.y); ctx.lineTo(bounds.x+bounds.width+bounds.wallThickness/2, bounds.y); ctx.stroke(); }
-        if (skipWall!=='bottom') { ctx.beginPath(); ctx.moveTo(bounds.x-bounds.wallThickness/2, bounds.y+bounds.height); ctx.lineTo(bounds.x+bounds.width+bounds.wallThickness/2, bounds.y+bounds.height); ctx.stroke(); }
-        if (skipWall!=='left') { ctx.beginPath(); ctx.moveTo(bounds.x, bounds.y-bounds.wallThickness/2); ctx.lineTo(bounds.x, bounds.y+bounds.height+bounds.wallThickness/2); ctx.stroke(); }
-        if (skipWall!=='right') { ctx.beginPath(); ctx.moveTo(bounds.x+bounds.width, bounds.y-bounds.wallThickness/2); ctx.lineTo(bounds.x+bounds.width, bounds.y+bounds.height+bounds.wallThickness/2); ctx.stroke(); }
+        // 4 paredes
+        ctx.beginPath(); ctx.moveTo(bounds.x - bounds.wallThickness/2, bounds.y); ctx.lineTo(bounds.x + bounds.width + bounds.wallThickness/2, bounds.y); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(bounds.x - bounds.wallThickness/2, bounds.y + bounds.height); ctx.lineTo(bounds.x + bounds.width + bounds.wallThickness/2, bounds.y + bounds.height); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(bounds.x, bounds.y - bounds.wallThickness/2); ctx.lineTo(bounds.x, bounds.y + bounds.height + bounds.wallThickness/2); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(bounds.x + bounds.width, bounds.y - bounds.wallThickness/2); ctx.lineTo(bounds.x + bounds.width, bounds.y + bounds.height + bounds.wallThickness/2); ctx.stroke();
 
+        // Textura concreto
         ctx.strokeStyle = '#6B5B45'; ctx.lineWidth = 1;
-        if (skipWall!=='top') for (var x=bounds.x; x<bounds.x+bounds.width; x+=8) { ctx.beginPath(); ctx.moveTo(x, bounds.y-bounds.wallThickness/2); ctx.lineTo(x+8, bounds.y+bounds.wallThickness/2); ctx.stroke(); }
-        if (skipWall!=='bottom') for (var x2=bounds.x; x2<bounds.x+bounds.width; x2+=8) { ctx.beginPath(); ctx.moveTo(x2, bounds.y+bounds.height-bounds.wallThickness/2); ctx.lineTo(x2+8, bounds.y+bounds.height+bounds.wallThickness/2); ctx.stroke(); }
-        if (skipWall!=='left') for (var y=bounds.y; y<bounds.y+bounds.height; y+=8) { ctx.beginPath(); ctx.moveTo(bounds.x-bounds.wallThickness/2, y); ctx.lineTo(bounds.x+bounds.wallThickness/2, y+8); ctx.stroke(); }
-        if (skipWall!=='right') for (var y2=bounds.y; y2<bounds.y+bounds.height; y2+=8) { ctx.beginPath(); ctx.moveTo(bounds.x+bounds.width-bounds.wallThickness/2, y2); ctx.lineTo(bounds.x+bounds.width+bounds.wallThickness/2, y2+8); ctx.stroke(); }
+        for (var x = bounds.x; x < bounds.x + bounds.width; x += 6) {
+            ctx.beginPath(); ctx.moveTo(x, bounds.y - bounds.wallThickness/2); ctx.lineTo(x + 6, bounds.y + bounds.wallThickness/2); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(x, bounds.y + bounds.height - bounds.wallThickness/2); ctx.lineTo(x + 6, bounds.y + bounds.height + bounds.wallThickness/2); ctx.stroke();
+        }
+        for (var y = bounds.y; y < bounds.y + bounds.height; y += 6) {
+            ctx.beginPath(); ctx.moveTo(bounds.x - bounds.wallThickness/2, y); ctx.lineTo(bounds.x + bounds.wallThickness/2, y + 6); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(bounds.x + bounds.width - bounds.wallThickness/2, y); ctx.lineTo(bounds.x + bounds.width + bounds.wallThickness/2, y + 6); ctx.stroke();
+        }
 
-        if (windows) {
-            windows.forEach(function(win) {
+        // Ventanas
+        if (wins) {
+            wins.forEach(function(win) {
                 ctx.save();
-                if (win.wall==='left') {
-                    ctx.clearRect(bounds.x-bounds.wallThickness/2-1, win.start, bounds.wallThickness+2, win.end-win.start);
-                    ctx.fillStyle='rgba(135,206,235,0.6)'; ctx.fillRect(bounds.x-bounds.wallThickness/2, win.start, bounds.wallThickness, win.end-win.start);
-                    ctx.strokeStyle='#5DADE2'; ctx.lineWidth=1.5; ctx.strokeRect(bounds.x-bounds.wallThickness/2, win.start, bounds.wallThickness, win.end-win.start);
-                } else if (win.wall==='right') {
-                    ctx.clearRect(bounds.x+bounds.width-bounds.wallThickness/2-1, win.start, bounds.wallThickness+2, win.end-win.start);
-                    ctx.fillStyle='rgba(135,206,235,0.6)'; ctx.fillRect(bounds.x+bounds.width-bounds.wallThickness/2, win.start, bounds.wallThickness, win.end-win.start);
-                    ctx.strokeStyle='#5DADE2'; ctx.lineWidth=1.5; ctx.strokeRect(bounds.x+bounds.width-bounds.wallThickness/2, win.start, bounds.wallThickness, win.end-win.start);
-                } else if (win.wall==='bottom') {
-                    ctx.clearRect(win.start, bounds.y+bounds.height-bounds.wallThickness/2-1, win.end-win.start, bounds.wallThickness+2);
-                    ctx.fillStyle='rgba(135,206,235,0.6)'; ctx.fillRect(win.start, bounds.y+bounds.height-bounds.wallThickness/2, win.end-win.start, bounds.wallThickness);
-                    ctx.strokeStyle='#5DADE2'; ctx.lineWidth=1.5; ctx.strokeRect(win.start, bounds.y+bounds.height-bounds.wallThickness/2, win.end-win.start, bounds.wallThickness);
-                } else if (win.wall==='top') {
-                    ctx.clearRect(win.start, bounds.y-bounds.wallThickness/2-1, win.end-win.start, bounds.wallThickness+2);
-                    ctx.fillStyle='rgba(135,206,235,0.6)'; ctx.fillRect(win.start, bounds.y-bounds.wallThickness/2, win.end-win.start, bounds.wallThickness);
-                    ctx.strokeStyle='#5DADE2'; ctx.lineWidth=1.5; ctx.strokeRect(win.start, bounds.y-bounds.wallThickness/2, win.end-win.start, bounds.wallThickness);
+                if (win.wall === 'left') {
+                    ctx.clearRect(bounds.x - bounds.wallThickness/2 - 1, win.start, bounds.wallThickness + 2, win.end - win.start);
+                    ctx.fillStyle = 'rgba(135,206,235,0.6)'; ctx.fillRect(bounds.x - bounds.wallThickness/2, win.start, bounds.wallThickness, win.end - win.start);
+                    ctx.strokeStyle = '#5DADE2'; ctx.lineWidth = 1.5; ctx.strokeRect(bounds.x - bounds.wallThickness/2, win.start, bounds.wallThickness, win.end - win.start);
+                } else if (win.wall === 'right') {
+                    ctx.clearRect(bounds.x + bounds.width - bounds.wallThickness/2 - 1, win.start, bounds.wallThickness + 2, win.end - win.start);
+                    ctx.fillStyle = 'rgba(135,206,235,0.6)'; ctx.fillRect(bounds.x + bounds.width - bounds.wallThickness/2, win.start, bounds.wallThickness, win.end - win.start);
+                    ctx.strokeStyle = '#5DADE2'; ctx.lineWidth = 1.5; ctx.strokeRect(bounds.x + bounds.width - bounds.wallThickness/2, win.start, bounds.wallThickness, win.end - win.start);
+                } else if (win.wall === 'bottom') {
+                    ctx.clearRect(win.start, bounds.y + bounds.height - bounds.wallThickness/2 - 1, win.end - win.start, bounds.wallThickness + 2);
+                    ctx.fillStyle = 'rgba(135,206,235,0.6)'; ctx.fillRect(win.start, bounds.y + bounds.height - bounds.wallThickness/2, win.end - win.start, bounds.wallThickness);
+                    ctx.strokeStyle = '#5DADE2'; ctx.lineWidth = 1.5; ctx.strokeRect(win.start, bounds.y + bounds.height - bounds.wallThickness/2, win.end - win.start, bounds.wallThickness);
+                } else if (win.wall === 'top') {
+                    ctx.clearRect(win.start, bounds.y - bounds.wallThickness/2 - 1, win.end - win.start, bounds.wallThickness + 2);
+                    ctx.fillStyle = 'rgba(135,206,235,0.6)'; ctx.fillRect(win.start, bounds.y - bounds.wallThickness/2, win.end - win.start, bounds.wallThickness);
+                    ctx.strokeStyle = '#5DADE2'; ctx.lineWidth = 1.5; ctx.strokeRect(win.start, bounds.y - bounds.wallThickness/2, win.end - win.start, bounds.wallThickness);
                 }
-                ctx.fillStyle='#2980B9'; ctx.font='bold 6px sans-serif'; ctx.textAlign='center';
-                if (win.wall==='left') { ctx.save(); ctx.translate(bounds.x-bounds.wallThickness/2-6, (win.start+win.end)/2); ctx.rotate(-Math.PI/2); ctx.fillText('VENTANA',0,0); ctx.restore(); }
-                else if (win.wall==='right') { ctx.save(); ctx.translate(bounds.x+bounds.width+bounds.wallThickness/2+6, (win.start+win.end)/2); ctx.rotate(-Math.PI/2); ctx.fillText('VENTANA',0,0); ctx.restore(); }
-                else if (win.wall==='bottom') { ctx.fillText('VENTANA', (win.start+win.end)/2, bounds.y+bounds.height+bounds.wallThickness/2+10); }
-                else if (win.wall==='top') { ctx.fillText('VENTANA', (win.start+win.end)/2, bounds.y-bounds.wallThickness/2-6); }
                 ctx.restore();
             });
         }
-        ctx.fillStyle='#2C3E50'; ctx.font='bold 11px sans-serif'; ctx.textAlign='center';
-        ctx.fillText(label, bounds.x+bounds.width/2, bounds.y-16);
-    }
 
-    function drawDividingWall() {
-        ctx.save();
-        ctx.fillStyle = '#8B7355';
-        ctx.fillRect(wallX1, storeA.y, wallX2-wallX1, storeA.height);
-        ctx.strokeStyle = '#6B5B45'; ctx.lineWidth = 1;
-        for (var y=storeA.y; y<storeA.y+storeA.height; y+=8) { ctx.beginPath(); ctx.moveTo(wallX1, y); ctx.lineTo(wallX2, y+8); ctx.stroke(); }
-        ctx.strokeStyle = '#5D4E37'; ctx.lineWidth = 2;
-        ctx.strokeRect(wallX1, storeA.y, wallX2-wallX1, storeA.height);
-        ctx.fillStyle = '#FFFFFF'; ctx.font = 'bold 7px sans-serif'; ctx.textAlign = 'center';
-        ctx.save(); ctx.translate((wallX1+wallX2)/2, storeA.y+storeA.height/2); ctx.rotate(-Math.PI/2);
-        ctx.fillText('MURO CONCRETO', 0, 3); ctx.restore();
-        ctx.restore();
+        // Label
+        ctx.fillStyle = '#2C3E50'; ctx.font = 'bold 11px sans-serif'; ctx.textAlign = 'center';
+        ctx.fillText(label, bounds.x + bounds.width/2, bounds.y - 14);
     }
 
     function setupCanvasEvents() {
         if (!canvas) return;
         var getPos = function(e) {
             var rect = canvas.getBoundingClientRect();
-            var sx = canvas.width/rect.width, sy = canvas.height/rect.height;
+            var sx = canvas.width / rect.width, sy = canvas.height / rect.height;
             var cx = e.touches ? e.touches[0].clientX : e.clientX;
             var cy = e.touches ? e.touches[0].clientY : e.clientY;
-            return { x: (cx-rect.left)*sx, y: (cy-rect.top)*sy };
+            return { x: (cx - rect.left) * sx, y: (cy - rect.top) * sy };
         };
         var handleDown = function(e) {
             var pos = getPos(e);
             if (mode === 'antenna') {
-                if (Math.hypot(pos.x-antenna.x, pos.y-antenna.y) < 20) isDraggingAntenna = true;
+                if (Math.hypot(pos.x - antenna.x, pos.y - antenna.y) < 20) isDraggingAntenna = true;
                 else { antenna.x = pos.x; antenna.y = pos.y; }
                 return;
             }
-            var hit = people.findIndex(function(p) { return Math.hypot(p.x-pos.x, p.y-pos.y) < 14; });
+            var hit = people.findIndex(function(p) { return Math.hypot(p.x - pos.x, p.y - pos.y) < 12; });
             if (hit !== -1) { draggedPerson = hit; isDragging = true; return; }
-            if (mode === 'person') people.push({x:pos.x, y:pos.y});
-            else if (mode === 'shelf') shelves.push({x:pos.x-40, y:pos.y-12, w:80, h:24});
+            if (mode === 'person') people.push({x: pos.x, y: pos.y});
+            else if (mode === 'shelf') shelves.push({x: pos.x - 15, y: pos.y - 5, w: 30, h: 10});
         };
         var handleMove = function(e) {
             var pos = getPos(e);
@@ -3322,7 +3362,6 @@ const ReduccionSimulator = (function() {
         clearElements: clearElements, loadPreset: loadPreset, toggleAnimation: toggleAnimation
     };
 })();
-
 
 // Initialize on page load
 window.addEventListener('load', () => {
