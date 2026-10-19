@@ -14,17 +14,17 @@ const ReduccionSimulator = (function() {
     // y alivianar el render. Tienda 200x200 px sigue igual de grande.
     // Escala: 1 px = 0.05 m (20 px = 1 m)
     var PX_PER_METER = 20; // 1 px = 0.05 m
-    var antenna = { x: 290, y: 210 };
+    var antenna = { x: 240, y: 170 };
 
     // Una sola tienda: 10m x 10m = 100 m² => 200x200 px
-    var store = { x: 180, y: 100, width: 220, height: 220, wallThickness: 8 };
+    var store = { x: 160, y: 70, width: 160, height: 200, wallThickness: 8 };
     var WALL_ATTEN = 20;
     var WINDOW_ATTEN = 8;
 
     // Ventanas en la tienda (posiciones absolutas en px)
     var windows = [
-        { wall: 'left',   start: 150, end: 190 },  // ventana izquierda (~2m)
-        { wall: 'bottom', start: 250, end: 310 }   // ventana abajo (~3m)
+        { wall: 'left',   start: 110, end: 150 },  // ventana izquierda (~2m)
+        { wall: 'bottom', start: 210, end: 270 }   // ventana abajo (~3m)
     ];
 
     // Potencias: 0-100 donde 100 = más sensible (ve más lejos)
@@ -96,26 +96,26 @@ const ReduccionSimulator = (function() {
 
     function loadPreset(type) {
         people = [];
-        // Anaqueles dentro de la tienda (220x220, x:180-400, y:100-320)
+        // Anaqueles dentro de la tienda (160x200, x:160-320, y:70-270)
         shelves = [
-            { x: 210, y: 140, w: 44, h: 13 },
-            { x: 330, y: 140, w: 44, h: 13 },
-            { x: 210, y: 260, w: 44, h: 13 },
-            { x: 330, y: 260, w: 44, h: 13 }
+            { x: 185, y: 110, w: 36, h: 12 },
+            { x: 275, y: 110, w: 36, h: 12 },
+            { x: 185, y: 220, w: 36, h: 12 },
+            { x: 275, y: 220, w: 36, h: 12 }
         ];
         if (type === 'empty') {
         } else if (type === 'low') {
-            for (var i=0;i<4;i++) people.push({x:190+Math.random()*200, y:110+Math.random()*200});
-            for (var i2=0;i2<5;i2++) people.push({x:50+Math.random()*480, y:30+Math.random()*50});
-            for (var i3=0;i3<4;i3++) people.push({x:50+Math.random()*480, y:340+Math.random()*60});
+            for (var i=0;i<4;i++) people.push({x:170+Math.random()*140, y:80+Math.random()*180});
+            for (var i2=0;i2<5;i2++) people.push({x:40+Math.random()*400, y:25+Math.random()*35});
+            for (var i3=0;i3<4;i3++) people.push({x:40+Math.random()*400, y:285+Math.random()*45});
         } else if (type === 'average') {
-            for (var i=0;i<10;i++) people.push({x:190+Math.random()*200, y:110+Math.random()*200});
-            for (var i2=0;i2<12;i2++) people.push({x:30+Math.random()*520, y:20+Math.random()*60});
-            for (var i3=0;i3<10;i3++) people.push({x:30+Math.random()*520, y:340+Math.random()*60});
+            for (var i=0;i<10;i++) people.push({x:170+Math.random()*140, y:80+Math.random()*180});
+            for (var i2=0;i2<12;i2++) people.push({x:25+Math.random()*430, y:20+Math.random()*45});
+            for (var i3=0;i3<10;i3++) people.push({x:25+Math.random()*430, y:285+Math.random()*45});
         } else if (type === 'high') {
-            for (var i=0;i<25;i++) people.push({x:190+Math.random()*200, y:110+Math.random()*200});
-            for (var i2=0;i2<25;i2++) people.push({x:20+Math.random()*540, y:20+Math.random()*60});
-            for (var i3=0;i3<20;i3++) people.push({x:20+Math.random()*540, y:340+Math.random()*60});
+            for (var i=0;i<25;i++) people.push({x:170+Math.random()*140, y:80+Math.random()*180});
+            for (var i2=0;i2<25;i2++) people.push({x:15+Math.random()*450, y:20+Math.random()*45});
+            for (var i3=0;i3<20;i3++) people.push({x:15+Math.random()*450, y:285+Math.random()*45});
         }
         drawSim();
     }
@@ -308,8 +308,8 @@ const ReduccionSimulator = (function() {
         ctx.fillStyle = '#FFFFFF';
         ctx.fillRect(store.x, store.y, store.width, store.height);
 
-        // Heatmap cobertura — grid 25px para reducir carga de render
-        var gridSize = 25;
+        // Heatmap cobertura — grid 30px
+        var gridSize = 30;
         for (var x = 0; x < canvas.width; x += gridSize) {
             for (var y = 0; y < canvas.height; y += gridSize) {
                 var cx = x + gridSize/2, cy = y + gridSize/2;
@@ -328,7 +328,7 @@ const ReduccionSimulator = (function() {
         drawWave(visitasRadius, 'rgba(44,173,120,0.5)', [10,6], 'Visitas '+visitasDbm+' dBm', 0);
 
         // Paredes de la tienda
-        drawWalls(store, 'TIENDA (100 m\u00b2)', windows);
+        drawWalls(store, 'TIENDA (80 m\u00b2)', windows);
 
         // Anaqueles
         ctx.fillStyle = '#34495E';
@@ -390,7 +390,7 @@ const ReduccionSimulator = (function() {
         // Indicador de escala
         ctx.fillStyle = 'rgba(0,0,0,0.5)';
         ctx.font = '10px sans-serif'; ctx.textAlign = 'left';
-        ctx.fillText('Escala: 1 px = 0.05 m | Tienda: 10m x 10m = 100 m\u00b2', 8, canvas.height - 8);
+        ctx.fillText('Escala: 1 px = 0.05 m | Tienda: 8m x 10m = 80 m\u00b2', 8, canvas.height - 8);
         // Barra de escala
         ctx.strokeStyle = '#333'; ctx.lineWidth = 2;
         ctx.beginPath(); ctx.moveTo(canvas.width - 110, canvas.height - 15); ctx.lineTo(canvas.width - 10, canvas.height - 15); ctx.stroke();
