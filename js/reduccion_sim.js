@@ -119,6 +119,9 @@ const ReduccionSimulator = (function() {
     }
 
     // Cálculo de señal RAW (visión natural) — SIN atenuación de obstáculos
+    // Cálculo de señal RAW (visión natural) — ahora CON atenuaciones reales
+    // Raw usa rango 0 a -100 dBm y también se atenúa por obstáculos
+    // La diferencia con visitas es el rango (0 a -100 vs -20 a -90) y el modelo de path loss
     function calculateRawSignalAt(x, y) {
         var dist = Math.hypot(x - antenna.x, y - antenna.y);
         if (dist < 5) return 0;
@@ -129,7 +132,29 @@ const ReduccionSimulator = (function() {
             var t = (dist - 600) / 500;
             pathLoss = 14.5 * Math.log10(600) + t * 60;
         }
-        return Math.max(-100, Math.min(0, -pathLoss));
+
+        // Atenuaciones (igual que visitas pero en rango raw 0 a -100 dBm)
+        var ant = { x: antenna.x, y: antenna.y };
+        var tgt = { x: x, y: y };
+        var waterAtten = 0;
+        people.forEach(function(p) {
+            var d = pointToSegmentDistance(p, ant, tgt);
+            if (d < 20) waterAtten += 2.8;
+        });
+        var shelfAtten = 0;
+        shelves.forEach(function(s) {
+            if (lineIntersectsRect(ant, tgt, s)) shelfAtten += 5.0;
+        });
+        var wallAtten = 0;
+        var inAnt = isInStore(ant.x, ant.y);
+        var inPt = isInStore(x, y);
+        if (inAnt !== inPt) {
+            wallAtten = wallAttenForExit(storeBounds, windows, ant, tgt);
+        }
+        var climateAtten = lluviaAtten + tempAtten;
+
+        var rxSignal = -pathLoss - waterAtten - shelfAtten - wallAtten - climateAtten;
+        return Math.max(-100, Math.min(0, rxSignal));
     }
 
     // Cálculo de señal con atenuaciones completas:
