@@ -1378,7 +1378,7 @@
                     </div>
                 </div>
 
-                <canvas id="reduccionCanvas" width="900" height="600"></canvas>
+                <canvas id="reduccionCanvas" width="700" height="500"></canvas>
 
                 <div class="rf-legend-bar">
                     <div class="rf-legend-item"><div class="rf-legend-color" style="background: rgba(41,128,185,0.3); border: 1px dashed #2980B9;"></div><span>Raw (0 a -100 dBm)</span></div>
@@ -2888,30 +2888,21 @@ const ReduccionSimulator = (function() {
     var isAnimRunning = false;
     var isPaused = false;
 
-    // Escala: 1 px = 0.25 m  =>  4 px = 1 m
-    // Tienda de 100 m² = 10m x 10m = 40px x 40px... pero la hacemos más visible:
-    // Usamos escala más generosa: 1 px = 0.2 m => 5 px = 1 m
-    // Tienda 10m x 10m = 50px x 50px. Aun chico. 
-    // Mejor: 1 px = 0.15 m => tienda 10x10m = ~67px. 
-    // Para que se vea bien en canvas 900x600, usemos tienda ~200x200 px = 30m x 30m = 900 m²
-    // Pero el pidió 100 m²... OK, tienda 100 m² = 10x10m, a escala 1px=0.1m => 100x100px
-    // Canvas 900x600. Tienda 100x100 px. Raw cubre 150 m² => radio que cubra ~150 m²
-    // 150 m² => círculo de área 150 m² => r = sqrt(150/π) = 6.9 m = 69 px a 0.1m/px
-
-    // Escala más cercana: 1 px = 0.05 m (20 px = 1 m)
-    // Tienda 10m x 10m = 200x200 px (ocupa buena parte del canvas)
+    // Canvas reducido a 700x500 (~30% menos área) para acercar la vista
+    // y alivianar el render. Tienda 200x200 px sigue igual de grande.
+    // Escala: 1 px = 0.05 m (20 px = 1 m)
     var PX_PER_METER = 20; // 1 px = 0.05 m
-    var antenna = { x: 450, y: 300 };
+    var antenna = { x: 350, y: 250 };
 
     // Una sola tienda: 10m x 10m = 100 m² => 200x200 px
-    var store = { x: 350, y: 200, width: 200, height: 200, wallThickness: 8 };
+    var store = { x: 250, y: 150, width: 200, height: 200, wallThickness: 8 };
     var WALL_ATTEN = 20;
     var WINDOW_ATTEN = 8;
 
     // Ventanas en la tienda (posiciones absolutas en px)
     var windows = [
-        { wall: 'left',   start: 250, end: 290 },  // ventana izquierda (~2m)
-        { wall: 'bottom', start: 420, end: 480 }   // ventana abajo (~3m)
+        { wall: 'left',   start: 200, end: 240 },  // ventana izquierda (~2m)
+        { wall: 'bottom', start: 320, end: 380 }   // ventana abajo (~3m)
     ];
 
     // Potencias: 0-100 donde 100 = más sensible (ve más lejos)
@@ -2979,28 +2970,27 @@ const ReduccionSimulator = (function() {
 
     function loadPreset(type) {
         people = [];
-        // Anaqueles dentro de la tienda (200x200, x:350-550, y:200-400)
+        // Anaqueles dentro de la tienda (200x200, x:250-450, y:150-350)
         shelves = [
-            { x: 380, y: 240, w: 40, h: 12 },
-            { x: 480, y: 240, w: 40, h: 12 },
-            { x: 380, y: 340, w: 40, h: 12 },
-            { x: 480, y: 340, w: 40, h: 12 }
+            { x: 280, y: 190, w: 40, h: 12 },
+            { x: 380, y: 190, w: 40, h: 12 },
+            { x: 280, y: 290, w: 40, h: 12 },
+            { x: 380, y: 290, w: 40, h: 12 }
         ];
         if (type === 'empty') {
         } else if (type === 'low') {
-            // Pocas personas dentro
-            for (var i=0;i<4;i++) people.push({x:360+Math.random()*180, y:210+Math.random()*180});
+            for (var i=0;i<4;i++) people.push({x:260+Math.random()*180, y:160+Math.random()*180});
             // Paseantes fuera (cerca de la tienda)
-            for (var i2=0;i2<5;i2++) people.push({x:150+Math.random()*600, y:80+Math.random()*90});
-            for (var i3=0;i3<4;i3++) people.push({x:150+Math.random()*600, y:430+Math.random()*80});
+            for (var i2=0;i2<5;i2++) people.push({x:80+Math.random()*540, y:50+Math.random()*70});
+            for (var i3=0;i3<4;i3++) people.push({x:80+Math.random()*540, y:370+Math.random()*80});
         } else if (type === 'average') {
-            for (var i=0;i<10;i++) people.push({x:360+Math.random()*180, y:210+Math.random()*180});
-            for (var i2=0;i2<12;i2++) people.push({x:100+Math.random()*700, y:60+Math.random()*110});
-            for (var i3=0;i3<10;i3++) people.push({x:100+Math.random()*700, y:430+Math.random()*90});
+            for (var i=0;i<10;i++) people.push({x:260+Math.random()*180, y:160+Math.random()*180});
+            for (var i2=0;i2<12;i2++) people.push({x:60+Math.random()*580, y:40+Math.random()*80});
+            for (var i3=0;i3<10;i3++) people.push({x:60+Math.random()*580, y:370+Math.random()*90});
         } else if (type === 'high') {
-            for (var i=0;i<25;i++) people.push({x:360+Math.random()*180, y:210+Math.random()*180});
-            for (var i2=0;i2<25;i2++) people.push({x:80+Math.random()*740, y:60+Math.random()*110});
-            for (var i3=0;i3<20;i3++) people.push({x:80+Math.random()*740, y:430+Math.random()*90});
+            for (var i=0;i<25;i++) people.push({x:260+Math.random()*180, y:160+Math.random()*180});
+            for (var i2=0;i2<25;i2++) people.push({x:50+Math.random()*600, y:40+Math.random()*80});
+            for (var i3=0;i3<20;i3++) people.push({x:50+Math.random()*600, y:370+Math.random()*90});
         }
     }
 
@@ -3193,8 +3183,8 @@ const ReduccionSimulator = (function() {
         ctx.fillStyle = '#FFFFFF';
         ctx.fillRect(store.x, store.y, store.width, store.height);
 
-        // Heatmap cobertura
-        var gridSize = 10;
+        // Heatmap cobertura — grid 20px para reducir carga de render (4x menos celdas)
+        var gridSize = 20;
         for (var x = 0; x < canvas.width; x += gridSize) {
             for (var y = 0; y < canvas.height; y += gridSize) {
                 var cx = x + gridSize/2, cy = y + gridSize/2;
