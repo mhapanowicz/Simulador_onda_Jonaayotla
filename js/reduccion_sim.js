@@ -60,13 +60,15 @@ const ReduccionSimulator = (function() {
         paseantesPotencia = parseInt(val);
         var el = document.getElementById('red-paseantes-val');
         if (el) el.innerText = '-' + paseantesPotencia;
-        if (visitasPotencia < paseantesPotencia) {
+        // Si visitas quedó mayor que paseantes, ajustar visitas hacia abajo
+        if (visitasPotencia > paseantesPotencia) {
             visitasPotencia = paseantesPotencia;
             var vS = document.getElementById('red-visitas-slider');
             var vV = document.getElementById('red-visitas-val');
             if (vS) vS.value = visitasPotencia;
             if (vV) vV.innerText = '-' + visitasPotencia;
         }
+        // El slider de visitas no puede pasar de paseantes
         var vS2 = document.getElementById('red-visitas-slider');
         if (vS2) vS2.max = paseantesPotencia;
     }
@@ -462,12 +464,12 @@ const ReduccionSimulator = (function() {
             var visSig = calculateSignalAt(p.x, p.y);
             var pasSig = calculatePaseantesSignalAt(p.x, p.y);
             var rawSig = calculateRawSignalAt(p.x, p.y);
-            if (rawSig >= rawDbm) rawCount++;
 
             var inVis = visSig >= visitasDbm;
-            var inPas = pasSig >= paseantesDbm && !inVis;
+            var inPas = pasSig >= paseantesDbm; // incluye visitas (toda visita es paseante)
             if (inVis) visitasCount++;
-            else if (inPas) paseantesCount++;
+            if (inPas) paseantesCount++; // cuenta visitas + paseantes-only
+            if (rawSig >= rawDbm) rawCount++; // total detectado por raw (incluye todo)
 
             var personColor, bgColor, labelIcon;
             if (inVis) {
@@ -577,6 +579,15 @@ const ReduccionSimulator = (function() {
         // Etiqueta de tienda
         ctx.fillStyle = '#2C3E50'; ctx.font = 'bold 13px sans-serif'; ctx.textAlign = 'center';
         ctx.fillText('TIENDA GETIN', bounds.x + bounds.width/2, bounds.y - 14);
+
+        // Puerta (entrada principal) — gap en pared superior
+        var doorX = bounds.x + 60;
+        var doorW = 140;
+        ctx.clearRect(doorX, bounds.y - bounds.wallThickness/2 - 1, doorW, bounds.wallThickness + 2);
+        ctx.strokeStyle = '#2CAD78'; ctx.lineWidth = 3;
+        ctx.beginPath(); ctx.moveTo(doorX, bounds.y - 2); ctx.lineTo(doorX + doorW, bounds.y - 2); ctx.stroke();
+        ctx.fillStyle = '#2CAD78'; ctx.font = 'bold 10px sans-serif'; ctx.textAlign = 'center';
+        ctx.fillText('ENTRADA', doorX + doorW/2, bounds.y - 8);
 
         // Etiqueta de ventanas
         ctx.fillStyle = '#5DADE2'; ctx.font = 'bold 9px sans-serif';
