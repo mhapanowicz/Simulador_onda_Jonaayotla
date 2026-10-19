@@ -9,6 +9,9 @@ const ReduccionSimulator = (function() {
     var isDraggingAntenna = false;
     var isAnimRunning = false;
     var isPaused = false;
+    var zoomLevel = 1; // 1 = normal, 0.5 = vista amplia
+    var ZOOM_NORMAL = 1;
+    var ZOOM_WIDE = 0.5;
 
     // === TIENDA IDÉNTICA AL RF SIMULATOR ===
     // Canvas: 900x600. Tienda: 720x440 en (40,40). Antena: (700,440).
@@ -36,6 +39,14 @@ const ReduccionSimulator = (function() {
 
     // === MODELO DE PROPAGACIÓN (mismo del RF Simulator) ===
     var RAW_DBM = -100;
+
+    function toggleZoom() {
+        zoomLevel = (zoomLevel === ZOOM_NORMAL) ? ZOOM_WIDE : ZOOM_NORMAL;
+        var btn = document.getElementById('btn-red-zoom');
+        if (btn) {
+            btn.innerHTML = (zoomLevel === ZOOM_WIDE) ? '\ud83d\udd0d Vista Normal' : '\ud83d\udd0d Vista Amplia';
+        }
+    }
 
     function initSim() {
         canvas = document.getElementById('reduccionCanvas');
@@ -316,6 +327,16 @@ const ReduccionSimulator = (function() {
         ctx.fillStyle = "#F0F0F2";
         ctx.fillRect(0, 0, canvas.width, canvas.height);
 
+        // Aplicar zoom: centrar en la tienda, escalar
+        ctx.save();
+        if (zoomLevel < 1) {
+            var cx = storeBounds.x + storeBounds.width / 2;
+            var cy = storeBounds.y + storeBounds.height / 2;
+            ctx.translate(canvas.width / 2, canvas.height / 2);
+            ctx.scale(zoomLevel, zoomLevel);
+            ctx.translate(-cx, -cy);
+        }
+
         // Piso de tienda
         ctx.fillStyle = "#FFFFFF";
         ctx.fillRect(storeBounds.x, storeBounds.y, storeBounds.width, storeBounds.height);
@@ -530,6 +551,8 @@ const ReduccionSimulator = (function() {
             ctx.fillText(powerLabel, p.x, p.y - 16);
         });
 
+        ctx.restore(); // fin zoom
+
         // Métricas
         var mR = document.getElementById('red-metric-raw');
         var mP = document.getElementById('red-metric-paseantes');
@@ -677,6 +700,7 @@ const ReduccionSimulator = (function() {
     return {
         initSim: initSim, setMode: setMode, updatePaseantes: updatePaseantes,
         updateVisitas: updateVisitas, updateClima: updateClima, updateTemperatura: updateTemperatura,
-        clearElements: clearElements, loadPreset: loadPreset, toggleAnimation: toggleAnimation
+        clearElements: clearElements, loadPreset: loadPreset, toggleAnimation: toggleAnimation,
+        toggleZoom: toggleZoom
     };
 })();
