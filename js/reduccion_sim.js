@@ -488,6 +488,21 @@ const ReduccionSimulator = (function() {
             ctx.fillStyle = personColor; ctx.fill();
             ctx.fillStyle = "#FFFFFF"; ctx.font = "bold 9px sans-serif"; ctx.textAlign = "center";
             ctx.fillText(labelIcon, p.x, p.y + 3);
+
+            // Etiqueta de potencia sobre la persona
+            var powerLabel;
+            if (inVis) {
+                powerLabel = Math.round(visSig) + ' dBm';
+            } else if (inPas) {
+                powerLabel = Math.round(pasSig) + ' dBm';
+            } else if (rawSig >= rawDbm) {
+                powerLabel = Math.round(rawSig) + ' dBm';
+            } else {
+                powerLabel = 'N/A';
+            }
+            ctx.fillStyle = personColor;
+            ctx.font = 'bold 10px sans-serif';
+            ctx.fillText(powerLabel, p.x, p.y - 16);
         });
 
         // Métricas
