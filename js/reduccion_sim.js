@@ -154,7 +154,7 @@ const ReduccionSimulator = (function() {
         var climateAtten = lluviaAtten + tempAtten;
 
         var rxSignal = -pathLoss - waterAtten - shelfAtten - wallAtten - climateAtten;
-        return Math.max(-100, Math.min(0, rxSignal));
+        return Math.min(0, rxSignal); // sin clamp inferior — si baja de -100 está fuera de rango
     }
 
     // Cálculo de señal con atenuaciones completas:
@@ -204,7 +204,7 @@ const ReduccionSimulator = (function() {
         var climateAtten = lluviaAtten + tempAtten;
 
         var rxSignal = -pathLoss - waterAtten - shelfAtten - wallAtten - climateAtten;
-        return Math.max(-100, Math.min(-20, rxSignal));
+        return Math.min(-20, rxSignal); // sin clamp inferior — si baja de -100 está fuera de rango
     }
 
     // Calcular señal para paseantes (umbral menos estricto que visitas)
