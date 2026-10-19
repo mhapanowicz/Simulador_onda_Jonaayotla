@@ -1341,7 +1341,7 @@
         <div class="content-card" style="border-left: 4px solid var(--getin-green); margin-bottom: 20px;">
             <h3 style="font-size: 16px; margin-bottom: 6px; color: var(--getin-green-dark); font-weight: 700;">¿Cómo funciona este simulador?</h3>
             <p style="font-size: 14px; color: var(--text); line-height: 1.55;">
-                La antena emite 3 ondas: <strong style="color:#2980B9;">Raw</strong> (señal natural, cubre tienda y media ~150 m²), <strong style="color:#E74C3C;">Paseantes</strong> (rojo, calibrable) y <strong style="color:#2CAD78;">Visitas</strong> (verde, calibrable, siempre ≤ paseantes). Una sola tienda de 100 m² (10x10m). Todo afecta a todas las ondas: personas, anaqueles, paredes, ventanas y clima.
+                La antena emite 3 ondas: <strong style="color:#2980B9;">Raw</strong> (señal natural, siempre cubre toda la tienda), <strong style="color:#E74C3C;">Paseantes</strong> (rojo, calibrable) y <strong style="color:#2CAD78;">Visitas</strong> (verde, calibrable, siempre ≤ paseantes). Atenuaciones reales: personas (2.8 dB), anaqueles (5 dB), paredes de concreto (20 dB), ventanas de vidrio (8 dB), lluvia y temperatura.
             </p>
         </div>
 
@@ -1359,7 +1359,7 @@
                         </button>
                         <button class="btn btn-danger" onclick="ReduccionSimulator.clearElements()">Limpiar Todo</button>
                         <button class="btn" id="btn-red-toggle-anim" onclick="ReduccionSimulator.toggleAnimation()">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.33L23 10"/></svg>
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
                             ⏸ Pausar
                         </button>
                         <button class="btn" id="btn-red-move-antenna" onclick="ReduccionSimulator.setMode('antenna')">
@@ -1378,7 +1378,7 @@
                     </div>
                 </div>
 
-                <canvas id="reduccionCanvas" width="400" height="280"></canvas>
+                <canvas id="reduccionCanvas" width="900" height="600"></canvas>
 
                 <div class="rf-legend-bar">
                     <div class="rf-legend-item"><div class="rf-legend-color" style="background: rgba(41,128,185,0.3); border: 1px dashed #2980B9;"></div><span>Raw (0 a -100 dBm)</span></div>
