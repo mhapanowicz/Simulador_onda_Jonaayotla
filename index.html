@@ -1359,8 +1359,8 @@
                         </button>
                         <button class="btn btn-danger" onclick="ReduccionSimulator.clearElements()">Limpiar Todo</button>
                         <button class="btn" id="btn-red-toggle-anim" onclick="ReduccionSimulator.toggleAnimation()">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
-                            ⏸ Pausar
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.33L23 10"/></svg>
+                            ↻ Actualizar
                         </button>
                         <button class="btn" id="btn-red-move-antenna" onclick="ReduccionSimulator.setMode('antenna')">
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v6m0 10v6m11-11h-6M7 12H1"/></svg>
@@ -1378,7 +1378,7 @@
                     </div>
                 </div>
 
-                <canvas id="reduccionCanvas" width="700" height="500"></canvas>
+                <canvas id="reduccionCanvas" width="600" height="440"></canvas>
 
                 <div class="rf-legend-bar">
                     <div class="rf-legend-item"><div class="rf-legend-color" style="background: rgba(41,128,185,0.3); border: 1px dashed #2980B9;"></div><span>Raw (0 a -100 dBm)</span></div>
@@ -2892,17 +2892,17 @@ const ReduccionSimulator = (function() {
     // y alivianar el render. Tienda 200x200 px sigue igual de grande.
     // Escala: 1 px = 0.05 m (20 px = 1 m)
     var PX_PER_METER = 20; // 1 px = 0.05 m
-    var antenna = { x: 350, y: 250 };
+    var antenna = { x: 300, y: 220 };
 
     // Una sola tienda: 10m x 10m = 100 m² => 200x200 px
-    var store = { x: 250, y: 150, width: 200, height: 200, wallThickness: 8 };
+    var store = { x: 200, y: 120, width: 200, height: 200, wallThickness: 8 };
     var WALL_ATTEN = 20;
     var WINDOW_ATTEN = 8;
 
     // Ventanas en la tienda (posiciones absolutas en px)
     var windows = [
-        { wall: 'left',   start: 200, end: 240 },  // ventana izquierda (~2m)
-        { wall: 'bottom', start: 320, end: 380 }   // ventana abajo (~3m)
+        { wall: 'left',   start: 170, end: 210 },  // ventana izquierda (~2m)
+        { wall: 'bottom', start: 270, end: 330 }   // ventana abajo (~3m)
     ];
 
     // Potencias: 0-100 donde 100 = más sensible (ve más lejos)
@@ -2918,7 +2918,7 @@ const ReduccionSimulator = (function() {
         ctx = canvas.getContext('2d');
         loadPreset('average');
         setupCanvasEvents();
-        if (!isAnimRunning) { isAnimRunning = true; animate(); }
+        drawSim(); // Dibujo único, sin animation loop
     }
 
     function setMode(newMode) {
@@ -2944,6 +2944,7 @@ const ReduccionSimulator = (function() {
         }
         var vS2 = document.getElementById('red-visitas-slider');
         if (vS2) vS2.max = paseantesPotencia;
+        drawSim();
     }
 
     function updateVisitas(val) {
@@ -2952,11 +2953,13 @@ const ReduccionSimulator = (function() {
         if (el) el.innerText = '-' + visitasPotencia;
         var vS = document.getElementById('red-visitas-slider');
         if (vS) vS.value = visitasPotencia;
+        drawSim();
     }
 
     function updateClima() {
         var sel = document.getElementById('red-lluvia');
         if (sel) lluviaAtten = parseInt(sel.value);
+        drawSim();
     }
 
     function updateTemperatura(val) {
@@ -2964,34 +2967,36 @@ const ReduccionSimulator = (function() {
         var el = document.getElementById('red-temp-val');
         if (el) el.innerText = temp + '\u00b0C';
         tempAtten = (temp > 40 || temp < 0) ? 1 : 0;
+        drawSim();
     }
 
-    function clearElements() { people = []; shelves = []; }
+    function clearElements() { people = []; shelves = []; drawSim(); }
 
     function loadPreset(type) {
         people = [];
-        // Anaqueles dentro de la tienda (200x200, x:250-450, y:150-350)
+        // Anaqueles dentro de la tienda (200x200, x:200-400, y:120-320)
         shelves = [
-            { x: 280, y: 190, w: 40, h: 12 },
-            { x: 380, y: 190, w: 40, h: 12 },
-            { x: 280, y: 290, w: 40, h: 12 },
-            { x: 380, y: 290, w: 40, h: 12 }
+            { x: 230, y: 160, w: 40, h: 12 },
+            { x: 330, y: 160, w: 40, h: 12 },
+            { x: 230, y: 260, w: 40, h: 12 },
+            { x: 330, y: 260, w: 40, h: 12 }
         ];
         if (type === 'empty') {
         } else if (type === 'low') {
-            for (var i=0;i<4;i++) people.push({x:260+Math.random()*180, y:160+Math.random()*180});
+            for (var i=0;i<4;i++) people.push({x:210+Math.random()*180, y:130+Math.random()*180});
             // Paseantes fuera (cerca de la tienda)
-            for (var i2=0;i2<5;i2++) people.push({x:80+Math.random()*540, y:50+Math.random()*70});
-            for (var i3=0;i3<4;i3++) people.push({x:80+Math.random()*540, y:370+Math.random()*80});
+            for (var i2=0;i2<5;i2++) people.push({x:60+Math.random()*480, y:40+Math.random()*60});
+            for (var i3=0;i3<4;i3++) people.push({x:60+Math.random()*480, y:340+Math.random()*70});
         } else if (type === 'average') {
-            for (var i=0;i<10;i++) people.push({x:260+Math.random()*180, y:160+Math.random()*180});
-            for (var i2=0;i2<12;i2++) people.push({x:60+Math.random()*580, y:40+Math.random()*80});
-            for (var i3=0;i3<10;i3++) people.push({x:60+Math.random()*580, y:370+Math.random()*90});
+            for (var i=0;i<10;i++) people.push({x:210+Math.random()*180, y:130+Math.random()*180});
+            for (var i2=0;i2<12;i2++) people.push({x:40+Math.random()*520, y:30+Math.random()*70});
+            for (var i3=0;i3<10;i3++) people.push({x:40+Math.random()*520, y:340+Math.random()*80});
         } else if (type === 'high') {
-            for (var i=0;i<25;i++) people.push({x:260+Math.random()*180, y:160+Math.random()*180});
-            for (var i2=0;i2<25;i2++) people.push({x:50+Math.random()*600, y:40+Math.random()*80});
-            for (var i3=0;i3<20;i3++) people.push({x:50+Math.random()*600, y:370+Math.random()*90});
+            for (var i=0;i<25;i++) people.push({x:210+Math.random()*180, y:130+Math.random()*180});
+            for (var i2=0;i2<25;i2++) people.push({x:30+Math.random()*540, y:30+Math.random()*70});
+            for (var i3=0;i3<20;i3++) people.push({x:30+Math.random()*540, y:340+Math.random()*80});
         }
+        drawSim();
     }
 
     function isInStore(x, y) {
@@ -3138,20 +3143,19 @@ const ReduccionSimulator = (function() {
         return (ccw(a, c, d) !== ccw(b, c, d)) && (ccw(a, b, c) !== ccw(a, b, d));
     }
 
-    function animate() {
-        if (!isPaused) wavePhase = (wavePhase + 0.4) % 30;
+    // Sin animation loop — dibujo bajo demanda (redraw() cuando cambia algo)
+    function redraw() {
         var tab = document.getElementById('tab-reduccion');
-        if (tab && tab.classList.contains('active')) drawSim();
-        requestAnimationFrame(animate);
+        if (tab) drawSim();
+    }
+
+    function animate() {
+        // Deprecated — mantenido por compatibilidad pero no hace nada
     }
 
     function toggleAnimation() {
-        isPaused = !isPaused;
-        var btn = document.getElementById('btn-red-toggle-anim');
-        if (btn) {
-            if (isPaused) { btn.innerHTML = '\u25b6 Reanudar'; btn.className = 'btn'; }
-            else { btn.innerHTML = '\u23f8 Pausar'; btn.className = 'btn'; }
-        }
+        // Sin animación que pausar — redibuja una vez
+        redraw();
     }
 
     function drawSim() {
@@ -3220,7 +3224,7 @@ const ReduccionSimulator = (function() {
         ctx.fillStyle = '#9B59B6';
         ctx.beginPath(); ctx.arc(antenna.x, antenna.y, 8, 0, Math.PI*2); ctx.fill();
         ctx.strokeStyle = '#9B59B6'; ctx.lineWidth = 2;
-        ctx.beginPath(); ctx.arc(antenna.x, antenna.y, 12 + Math.sin(Date.now()/200)*2, 0, Math.PI*2); ctx.stroke();
+        ctx.beginPath(); ctx.arc(antenna.x, antenna.y, 14, 0, Math.PI*2); ctx.stroke();
         ctx.fillStyle = '#FFFFFF'; ctx.font = 'bold 7px sans-serif'; ctx.textAlign = 'center';
         ctx.fillText('ANT', antenna.x, antenna.y + 2);
         ctx.restore();
@@ -3276,10 +3280,12 @@ const ReduccionSimulator = (function() {
     function drawWave(radius, strokeColor, dash, label, labelAngle) {
         radius = Math.max(5, radius);
         ctx.save();
+        // Círculo estático — sin animación
         ctx.beginPath(); ctx.arc(antenna.x, antenna.y, radius, 0, Math.PI*2);
         ctx.strokeStyle = strokeColor; ctx.lineWidth = 2;
         ctx.setLineDash([4,4]); ctx.stroke(); ctx.setLineDash([]);
-        for (var r = wavePhase; r < radius; r += 25) {
+        // Círculos concéntricos estáticos (sin wavePhase)
+        for (var r = 10; r < radius; r += 25) {
             var intensity = Math.max(0, 1 - r / radius);
             ctx.beginPath(); ctx.arc(antenna.x, antenna.y, r, 0, Math.PI*2);
             ctx.strokeStyle = strokeColor.replace(/[\d\.]+\)$/, (intensity * 0.3) + ')');
@@ -3358,18 +3364,19 @@ const ReduccionSimulator = (function() {
             var pos = getPos(e);
             if (mode === 'antenna') {
                 if (Math.hypot(pos.x - antenna.x, pos.y - antenna.y) < 20) isDraggingAntenna = true;
-                else { antenna.x = pos.x; antenna.y = pos.y; }
+                else { antenna.x = pos.x; antenna.y = pos.y; drawSim(); }
                 return;
             }
             var hit = people.findIndex(function(p) { return Math.hypot(p.x - pos.x, p.y - pos.y) < 12; });
             if (hit !== -1) { draggedPerson = hit; isDragging = true; return; }
             if (mode === 'person') people.push({x: pos.x, y: pos.y});
             else if (mode === 'shelf') shelves.push({x: pos.x - 20, y: pos.y - 6, w: 40, h: 12});
+            drawSim();
         };
         var handleMove = function(e) {
             var pos = getPos(e);
-            if (isDraggingAntenna) { antenna.x = Math.max(10, Math.min(canvas.width-10, pos.x)); antenna.y = Math.max(10, Math.min(canvas.height-10, pos.y)); return; }
-            if (isDragging && draggedPerson !== null) { people[draggedPerson].x = pos.x; people[draggedPerson].y = pos.y; }
+            if (isDraggingAntenna) { antenna.x = Math.max(10, Math.min(canvas.width-10, pos.x)); antenna.y = Math.max(10, Math.min(canvas.height-10, pos.y)); drawSim(); return; }
+            if (isDragging && draggedPerson !== null) { people[draggedPerson].x = pos.x; people[draggedPerson].y = pos.y; drawSim(); }
         };
         var handleUp = function() { isDragging = false; draggedPerson = null; isDraggingAntenna = false; };
 
