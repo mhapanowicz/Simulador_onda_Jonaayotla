@@ -9,6 +9,10 @@ const ReduccionSimulator = (function() {
     var isDraggingAntenna = false;
     var isAnimRunning = false;
     var isPaused = false;
+    
+    // Canvas offscreen para cachear el heatmap (no se recalcula cada frame)
+    var heatCanvas, heatCtx;
+    var heatNeedsUpdate = true;
 
     // Canvas reducido a 700x500 (~30% menos área) para acercar la vista
     // y alivianar el render. Tienda 200x200 px sigue igual de grande.
@@ -38,9 +42,15 @@ const ReduccionSimulator = (function() {
         canvas = document.getElementById('reduccionCanvas');
         if (!canvas) return;
         ctx = canvas.getContext('2d');
+        // Canvas offscreen para cachear heatmap
+        heatCanvas = document.createElement('canvas');
+        heatCanvas.width = canvas.width;
+        heatCanvas.height = canvas.height;
+        heatCtx = heatCanvas.getContext('2d');
         loadPreset('average');
         setupCanvasEvents();
-        drawSim(); // Dibujo único, sin animation loop
+        heatNeedsUpdate = true;
+        if (!isAnimRunning) { isAnimRunning = true; animate(); }
     }
 
     function setMode(newMode) {
@@ -66,6 +76,7 @@ const ReduccionSimulator = (function() {
         }
         var vS2 = document.getElementById('red-visitas-slider');
         if (vS2) vS2.max = paseantesPotencia;
+        heatNeedsUpdate = true;
         drawSim();
     }
 
@@ -75,12 +86,14 @@ const ReduccionSimulator = (function() {
         if (el) el.innerText = '-' + visitasPotencia;
         var vS = document.getElementById('red-visitas-slider');
         if (vS) vS.value = visitasPotencia;
+        heatNeedsUpdate = true;
         drawSim();
     }
 
     function updateClima() {
         var sel = document.getElementById('red-lluvia');
         if (sel) lluviaAtten = parseInt(sel.value);
+        heatNeedsUpdate = true;
         drawSim();
     }
 
@@ -92,7 +105,7 @@ const ReduccionSimulator = (function() {
         drawSim();
     }
 
-    function clearElements() { people = []; shelves = []; drawSim(); }
+    function clearElements() { people = []; shelves = []; heatNeedsUpdate = true; drawSim(); }
 
     function loadPreset(type) {
         people = [];
@@ -117,6 +130,7 @@ const ReduccionSimulator = (function() {
             for (var i2=0;i2<15;i2++) people.push({x:15+Math.random()*370, y:20+Math.random()*35});
             for (var i3=0;i3<10;i3++) people.push({x:15+Math.random()*370, y:260+Math.random()*35});
         }
+        heatNeedsUpdate = true;
         drawSim();
     }
 
@@ -264,19 +278,41 @@ const ReduccionSimulator = (function() {
         return (ccw(a, c, d) !== ccw(b, c, d)) && (ccw(a, b, c) !== ccw(a, b, d));
     }
 
-    // Sin animation loop — dibujo bajo demanda (redraw() cuando cambia algo)
-    function redraw() {
-        var tab = document.getElementById('tab-reduccion');
-        if (tab) drawSim();
-    }
-
     function animate() {
-        // Deprecated — mantenido por compatibilidad pero no hace nada
+        if (!isPaused) wavePhase = (wavePhase + 0.5) % 40;
+        var tab = document.getElementById('tab-reduccion');
+        if (tab && tab.classList.contains('active')) drawSim();
+        requestAnimationFrame(animate);
     }
 
     function toggleAnimation() {
-        // Sin animación que pausar — redibuja una vez
-        redraw();
+        isPaused = !isPaused;
+        var btn = document.getElementById('btn-red-toggle-anim');
+        if (btn) {
+            if (isPaused) { btn.innerHTML = '\u25b6 Reanudar'; btn.className = 'btn'; }
+            else { btn.innerHTML = '\u23f8 Pausar'; btn.className = 'btn'; }
+        }
+    }
+
+    function calcHeatmap() {
+        if (!heatCtx) return;
+        var rawDbm = -100;
+        var paseantesDbm = potenciaToDbm(paseantesPotencia);
+        var visitasDbm = potenciaToDbm(visitasPotencia);
+        heatCtx.clearRect(0, 0, heatCanvas.width, heatCanvas.height);
+        var gridSize = 40;
+        for (var x = 0; x < heatCanvas.width; x += gridSize) {
+            for (var y = 0; y < heatCanvas.height; y += gridSize) {
+                var cx = x + gridSize/2, cy = y + gridSize/2;
+                var sig = signalAt(cx, cy);
+                if (sig >= visitasDbm) heatCtx.fillStyle = 'rgba(44,173,120,0.18)';
+                else if (sig >= paseantesDbm) heatCtx.fillStyle = 'rgba(231,76,60,0.15)';
+                else if (sig >= rawDbm) heatCtx.fillStyle = 'rgba(41,128,185,0.08)';
+                else continue;
+                heatCtx.fillRect(x, y, gridSize, gridSize);
+            }
+        }
+        heatNeedsUpdate = false;
     }
 
     function drawSim() {
@@ -287,7 +323,7 @@ const ReduccionSimulator = (function() {
         ctx.fillStyle = '#F0F0F2';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-        // Grid de escala (cada 50px = 5m)
+        // Grid de escala
         ctx.strokeStyle = 'rgba(0,0,0,0.04)';
         ctx.lineWidth = 1;
         for (var gx = 0; gx <= canvas.width; gx += 50) {
@@ -297,6 +333,14 @@ const ReduccionSimulator = (function() {
             ctx.beginPath(); ctx.moveTo(0, gy); ctx.lineTo(canvas.width, gy); ctx.stroke();
         }
 
+        // Piso de tienda
+        ctx.fillStyle = '#FFFFFF';
+        ctx.fillRect(store.x, store.y, store.width, store.height);
+
+        // Heatmap cacheado — solo recalcular si hubo cambios
+        if (heatNeedsUpdate) calcHeatmap();
+        ctx.drawImage(heatCanvas, 0, 0);
+
         var rawDbm = -100;
         var paseantesDbm = potenciaToDbm(paseantesPotencia);
         var visitasDbm = potenciaToDbm(visitasPotencia);
@@ -304,29 +348,10 @@ const ReduccionSimulator = (function() {
         var paseantesRadius = getWaveRadius(paseantesDbm);
         var visitasRadius = getWaveRadius(visitasDbm);
 
-        // Piso de tienda
-        ctx.fillStyle = '#FFFFFF';
-        ctx.fillRect(store.x, store.y, store.width, store.height);
-
-        // Heatmap de cobertura — calcula signalAt con atenuaciones reales
-        // Grid 40px = 70 celdas en canvas 400x280 (muy liviano)
-        var gridSize = 40;
-        for (var x = 0; x < canvas.width; x += gridSize) {
-            for (var y = 0; y < canvas.height; y += gridSize) {
-                var cx = x + gridSize/2, cy = y + gridSize/2;
-                var sig = signalAt(cx, cy);
-                if (sig >= visitasDbm) ctx.fillStyle = 'rgba(44,173,120,0.18)';
-                else if (sig >= paseantesDbm) ctx.fillStyle = 'rgba(231,76,60,0.15)';
-                else if (sig >= rawDbm) ctx.fillStyle = 'rgba(41,128,185,0.08)';
-                else continue;
-                ctx.fillRect(x, y, gridSize, gridSize);
-            }
-        }
-
-        // 3 círculos de borde
-        drawWave(rawRadius, 'rgba(41,128,185,0.5)', 'Raw -100 dBm', -Math.PI/4);
-        drawWave(paseantesRadius, 'rgba(231,76,60,0.5)', 'Paseantes '+paseantesDbm+' dBm', Math.PI/4);
-        drawWave(visitasRadius, 'rgba(44,173,120,0.5)', 'Visitas '+visitasDbm+' dBm', 0);
+        // 3 ondas animadas (estilo RF Simulator)
+        drawWave(rawRadius, 'rgba(41,128,185,0.5)', [8,12], 'Raw -100 dBm', -Math.PI/4);
+        drawWave(paseantesRadius, 'rgba(231,76,60,0.5)', [6,8], 'Paseantes '+paseantesDbm+' dBm', Math.PI/4);
+        drawWave(visitasRadius, 'rgba(44,173,120,0.5)', [10,6], 'Visitas '+visitasDbm+' dBm', 0);
 
         // Paredes de la tienda
         drawWalls(store, 'TIENDA (80 m\u00b2)', windows);
@@ -346,7 +371,7 @@ const ReduccionSimulator = (function() {
         ctx.fillStyle = '#9B59B6';
         ctx.beginPath(); ctx.arc(antenna.x, antenna.y, 8, 0, Math.PI*2); ctx.fill();
         ctx.strokeStyle = '#9B59B6'; ctx.lineWidth = 2;
-        ctx.beginPath(); ctx.arc(antenna.x, antenna.y, 14, 0, Math.PI*2); ctx.stroke();
+        ctx.beginPath(); ctx.arc(antenna.x, antenna.y, 12 + Math.sin(Date.now()/200)*2, 0, Math.PI*2); ctx.stroke();
         ctx.fillStyle = '#FFFFFF'; ctx.font = 'bold 7px sans-serif'; ctx.textAlign = 'center';
         ctx.fillText('ANT', antenna.x, antenna.y + 2);
         ctx.restore();
@@ -399,12 +424,20 @@ const ReduccionSimulator = (function() {
         ctx.fillText('5 m', canvas.width - 60, canvas.height - 5);
     }
 
-    function drawWave(radius, strokeColor, label, labelAngle) {
+    function drawWave(radius, strokeColor, dash, label, labelAngle) {
         radius = Math.max(5, radius);
         ctx.save();
+        // Círculo límite
         ctx.beginPath(); ctx.arc(antenna.x, antenna.y, radius, 0, Math.PI*2);
         ctx.strokeStyle = strokeColor; ctx.lineWidth = 2;
         ctx.setLineDash([4,4]); ctx.stroke(); ctx.setLineDash([]);
+        // Ondas concéntricas animadas (estilo RF Simulator)
+        for (var r = wavePhase; r < radius; r += 25) {
+            var intensity = Math.max(0, 1 - r / radius);
+            ctx.beginPath(); ctx.arc(antenna.x, antenna.y, r, 0, Math.PI*2);
+            ctx.strokeStyle = strokeColor.replace(/[\d\.]+\)$/, (intensity * 0.3) + ')');
+            ctx.lineWidth = 1; ctx.setLineDash(dash); ctx.stroke(); ctx.setLineDash([]);
+        }
         var lx = antenna.x + Math.cos(labelAngle) * radius;
         var ly = antenna.y + Math.sin(labelAngle) * radius;
         ctx.fillStyle = 'rgba(255,255,255,0.85)';
@@ -485,12 +518,12 @@ const ReduccionSimulator = (function() {
             if (hit !== -1) { draggedPerson = hit; isDragging = true; return; }
             if (mode === 'person') people.push({x: pos.x, y: pos.y});
             else if (mode === 'shelf') shelves.push({x: pos.x - 20, y: pos.y - 6, w: 40, h: 12});
-            drawSim();
+            heatNeedsUpdate = true; drawSim();
         };
         var handleMove = function(e) {
             var pos = getPos(e);
-            if (isDraggingAntenna) { antenna.x = Math.max(10, Math.min(canvas.width-10, pos.x)); antenna.y = Math.max(10, Math.min(canvas.height-10, pos.y)); drawSim(); return; }
-            if (isDragging && draggedPerson !== null) { people[draggedPerson].x = pos.x; people[draggedPerson].y = pos.y; drawSim(); }
+            if (isDraggingAntenna) { antenna.x = Math.max(10, Math.min(canvas.width-10, pos.x)); antenna.y = Math.max(10, Math.min(canvas.height-10, pos.y)); heatNeedsUpdate = true; drawSim(); return; }
+            if (isDragging && draggedPerson !== null) { people[draggedPerson].x = pos.x; people[draggedPerson].y = pos.y; heatNeedsUpdate = true; drawSim(); }
         };
         var handleUp = function() { isDragging = false; draggedPerson = null; isDraggingAntenna = false; };
 
