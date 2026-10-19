@@ -117,7 +117,7 @@ const ReduccionSimulator = (function() {
     // Tramo 1 (0-600px): pathLoss = 10.86 + 14.5*log10(dist)
     // Tramo 2 (600-1100px): lineal de -60 a -90 dBm
     function getRawCoverageRadius() {
-        return 880; // Raw reducido 20%
+        return 616; // Raw reducido 30% adicional (880 * 0.7)
     }
 
     function getCoverageRadius(dbm) {
@@ -125,7 +125,7 @@ const ReduccionSimulator = (function() {
             return Math.max(5, Math.pow(10, (-19.86 - dbm) / 14.5));
         } else {
             var t = (-60.1 - dbm) / 29.9;
-            return 600 + t * 280; // 880 - 600 = 280 (reducido 20%)
+            return 420 + t * 196; // tramo 2: 420 a 616 (reducido 30% adicional)
         }
     }
 
