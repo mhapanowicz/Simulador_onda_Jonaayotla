@@ -308,16 +308,20 @@ const ReduccionSimulator = (function() {
         ctx.fillStyle = '#FFFFFF';
         ctx.fillRect(store.x, store.y, store.width, store.height);
 
-        // Áreas de cobertura (círculos rellenos — sin cálculo de heatmap)
-        // Raw (azul) — el más grande, más transparente
-        ctx.beginPath(); ctx.arc(antenna.x, antenna.y, rawRadius, 0, Math.PI*2);
-        ctx.fillStyle = 'rgba(41,128,185,0.08)'; ctx.fill();
-        // Paseantes (rojo) — mediano
-        ctx.beginPath(); ctx.arc(antenna.x, antenna.y, paseantesRadius, 0, Math.PI*2);
-        ctx.fillStyle = 'rgba(231,76,60,0.15)'; ctx.fill();
-        // Visitas (verde) — el más chico
-        ctx.beginPath(); ctx.arc(antenna.x, antenna.y, visitasRadius, 0, Math.PI*2);
-        ctx.fillStyle = 'rgba(44,173,120,0.18)'; ctx.fill();
+        // Heatmap de cobertura — calcula signalAt con atenuaciones reales
+        // Grid 40px = 70 celdas en canvas 400x280 (muy liviano)
+        var gridSize = 40;
+        for (var x = 0; x < canvas.width; x += gridSize) {
+            for (var y = 0; y < canvas.height; y += gridSize) {
+                var cx = x + gridSize/2, cy = y + gridSize/2;
+                var sig = signalAt(cx, cy);
+                if (sig >= visitasDbm) ctx.fillStyle = 'rgba(44,173,120,0.18)';
+                else if (sig >= paseantesDbm) ctx.fillStyle = 'rgba(231,76,60,0.15)';
+                else if (sig >= rawDbm) ctx.fillStyle = 'rgba(41,128,185,0.08)';
+                else continue;
+                ctx.fillRect(x, y, gridSize, gridSize);
+            }
+        }
 
         // 3 círculos de borde
         drawWave(rawRadius, 'rgba(41,128,185,0.5)', 'Raw -100 dBm', -Math.PI/4);
