@@ -14,17 +14,17 @@ const ReduccionSimulator = (function() {
     // y alivianar el render. Tienda 200x200 px sigue igual de grande.
     // Escala: 1 px = 0.05 m (20 px = 1 m)
     var PX_PER_METER = 20; // 1 px = 0.05 m
-    var antenna = { x: 300, y: 220 };
+    var antenna = { x: 290, y: 210 };
 
     // Una sola tienda: 10m x 10m = 100 m² => 200x200 px
-    var store = { x: 200, y: 120, width: 200, height: 200, wallThickness: 8 };
+    var store = { x: 180, y: 100, width: 220, height: 220, wallThickness: 8 };
     var WALL_ATTEN = 20;
     var WINDOW_ATTEN = 8;
 
     // Ventanas en la tienda (posiciones absolutas en px)
     var windows = [
-        { wall: 'left',   start: 170, end: 210 },  // ventana izquierda (~2m)
-        { wall: 'bottom', start: 270, end: 330 }   // ventana abajo (~3m)
+        { wall: 'left',   start: 150, end: 190 },  // ventana izquierda (~2m)
+        { wall: 'bottom', start: 250, end: 310 }   // ventana abajo (~3m)
     ];
 
     // Potencias: 0-100 donde 100 = más sensible (ve más lejos)
@@ -96,27 +96,26 @@ const ReduccionSimulator = (function() {
 
     function loadPreset(type) {
         people = [];
-        // Anaqueles dentro de la tienda (200x200, x:200-400, y:120-320)
+        // Anaqueles dentro de la tienda (220x220, x:180-400, y:100-320)
         shelves = [
-            { x: 230, y: 160, w: 40, h: 12 },
-            { x: 330, y: 160, w: 40, h: 12 },
-            { x: 230, y: 260, w: 40, h: 12 },
-            { x: 330, y: 260, w: 40, h: 12 }
+            { x: 210, y: 140, w: 44, h: 13 },
+            { x: 330, y: 140, w: 44, h: 13 },
+            { x: 210, y: 260, w: 44, h: 13 },
+            { x: 330, y: 260, w: 44, h: 13 }
         ];
         if (type === 'empty') {
         } else if (type === 'low') {
-            for (var i=0;i<4;i++) people.push({x:210+Math.random()*180, y:130+Math.random()*180});
-            // Paseantes fuera (cerca de la tienda)
-            for (var i2=0;i2<5;i2++) people.push({x:60+Math.random()*480, y:40+Math.random()*60});
-            for (var i3=0;i3<4;i3++) people.push({x:60+Math.random()*480, y:340+Math.random()*70});
+            for (var i=0;i<4;i++) people.push({x:190+Math.random()*200, y:110+Math.random()*200});
+            for (var i2=0;i2<5;i2++) people.push({x:50+Math.random()*480, y:30+Math.random()*50});
+            for (var i3=0;i3<4;i3++) people.push({x:50+Math.random()*480, y:340+Math.random()*60});
         } else if (type === 'average') {
-            for (var i=0;i<10;i++) people.push({x:210+Math.random()*180, y:130+Math.random()*180});
-            for (var i2=0;i2<12;i2++) people.push({x:40+Math.random()*520, y:30+Math.random()*70});
-            for (var i3=0;i3<10;i3++) people.push({x:40+Math.random()*520, y:340+Math.random()*80});
+            for (var i=0;i<10;i++) people.push({x:190+Math.random()*200, y:110+Math.random()*200});
+            for (var i2=0;i2<12;i2++) people.push({x:30+Math.random()*520, y:20+Math.random()*60});
+            for (var i3=0;i3<10;i3++) people.push({x:30+Math.random()*520, y:340+Math.random()*60});
         } else if (type === 'high') {
-            for (var i=0;i<25;i++) people.push({x:210+Math.random()*180, y:130+Math.random()*180});
-            for (var i2=0;i2<25;i2++) people.push({x:30+Math.random()*540, y:30+Math.random()*70});
-            for (var i3=0;i3<20;i3++) people.push({x:30+Math.random()*540, y:340+Math.random()*80});
+            for (var i=0;i<25;i++) people.push({x:190+Math.random()*200, y:110+Math.random()*200});
+            for (var i2=0;i2<25;i2++) people.push({x:20+Math.random()*540, y:20+Math.random()*60});
+            for (var i3=0;i3<20;i3++) people.push({x:20+Math.random()*540, y:340+Math.random()*60});
         }
         drawSim();
     }
@@ -309,8 +308,8 @@ const ReduccionSimulator = (function() {
         ctx.fillStyle = '#FFFFFF';
         ctx.fillRect(store.x, store.y, store.width, store.height);
 
-        // Heatmap cobertura — grid 20px para reducir carga de render (4x menos celdas)
-        var gridSize = 20;
+        // Heatmap cobertura — grid 25px para reducir carga de render
+        var gridSize = 25;
         for (var x = 0; x < canvas.width; x += gridSize) {
             for (var y = 0; y < canvas.height; y += gridSize) {
                 var cx = x + gridSize/2, cy = y + gridSize/2;
