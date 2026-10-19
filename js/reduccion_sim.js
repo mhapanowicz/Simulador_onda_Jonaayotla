@@ -117,7 +117,7 @@ const ReduccionSimulator = (function() {
     // Tramo 1 (0-600px): pathLoss = 10.86 + 14.5*log10(dist)
     // Tramo 2 (600-1100px): lineal de -60 a -90 dBm
     function getRawCoverageRadius() {
-        return 1100; // Raw siempre cubre toda la tienda
+        return 880; // Raw reducido 20%
     }
 
     function getCoverageRadius(dbm) {
@@ -125,7 +125,7 @@ const ReduccionSimulator = (function() {
             return Math.max(5, Math.pow(10, (-19.86 - dbm) / 14.5));
         } else {
             var t = (-60.1 - dbm) / 29.9;
-            return 600 + t * 500;
+            return 600 + t * 280; // 880 - 600 = 280 (reducido 20%)
         }
     }
 
@@ -353,9 +353,14 @@ const ReduccionSimulator = (function() {
         // Rojo: paseantes (dentro de paseantes pero no visitas)
         // Azul: raw (detectado pero no paseante)
         // Gris: fuera de raw
+        // En vista amplia, calcular el area visible segun zoom
+        var heatW = canvas.width / zoomLevel;
+        var heatH = canvas.height / zoomLevel;
+        var heatOffsetX = zoomLevel < 1 ? (storeBounds.x + storeBounds.width/2) - heatW/2 : 0;
+        var heatOffsetY = zoomLevel < 1 ? (storeBounds.y + storeBounds.height/2) - heatH/2 : 0;
         var gridSize = 20;
-        for (var x = 0; x < canvas.width; x += gridSize) {
-            for (var y = 0; y < canvas.height; y += gridSize) {
+        for (var x = heatOffsetX; x < heatOffsetX + heatW; x += gridSize) {
+            for (var y = heatOffsetY; y < heatOffsetY + heatH; y += gridSize) {
                 var cx = x + gridSize/2, cy = y + gridSize/2;
                 var rawSig = calculateRawSignalAt(cx, cy);
                 var visSig = calculateSignalAt(cx, cy);
