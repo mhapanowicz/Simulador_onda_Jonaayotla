@@ -14,17 +14,17 @@ const ReduccionSimulator = (function() {
     // y alivianar el render. Tienda 200x200 px sigue igual de grande.
     // Escala: 1 px = 0.05 m (20 px = 1 m)
     var PX_PER_METER = 20; // 1 px = 0.05 m
-    var antenna = { x: 240, y: 170 };
+    var antenna = { x: 200, y: 150 };
 
     // Una sola tienda: 10m x 10m = 100 m² => 200x200 px
-    var store = { x: 160, y: 70, width: 160, height: 200, wallThickness: 8 };
+    var store = { x: 120, y: 50, width: 160, height: 200, wallThickness: 8 };
     var WALL_ATTEN = 20;
     var WINDOW_ATTEN = 8;
 
     // Ventanas en la tienda (posiciones absolutas en px)
     var windows = [
-        { wall: 'left',   start: 110, end: 150 },  // ventana izquierda (~2m)
-        { wall: 'bottom', start: 210, end: 270 }   // ventana abajo (~3m)
+        { wall: 'left',   start: 90, end: 130 },  // ventana izquierda (~2m)
+        { wall: 'bottom', start: 170, end: 230 }   // ventana abajo (~3m)
     ];
 
     // Potencias: 0-100 donde 100 = más sensible (ve más lejos)
@@ -96,26 +96,26 @@ const ReduccionSimulator = (function() {
 
     function loadPreset(type) {
         people = [];
-        // Anaqueles dentro de la tienda (160x200, x:160-320, y:70-270)
+        // Anaqueles dentro de la tienda (160x200, x:120-280, y:50-250)
         shelves = [
-            { x: 185, y: 110, w: 36, h: 12 },
-            { x: 275, y: 110, w: 36, h: 12 },
-            { x: 185, y: 220, w: 36, h: 12 },
-            { x: 275, y: 220, w: 36, h: 12 }
+            { x: 145, y: 90, w: 36, h: 12 },
+            { x: 235, y: 90, w: 36, h: 12 },
+            { x: 145, y: 200, w: 36, h: 12 },
+            { x: 235, y: 200, w: 36, h: 12 }
         ];
         if (type === 'empty') {
         } else if (type === 'low') {
-            for (var i=0;i<4;i++) people.push({x:170+Math.random()*140, y:80+Math.random()*180});
-            for (var i2=0;i2<5;i2++) people.push({x:40+Math.random()*400, y:25+Math.random()*35});
-            for (var i3=0;i3<4;i3++) people.push({x:40+Math.random()*400, y:285+Math.random()*45});
+            for (var i=0;i<4;i++) people.push({x:130+Math.random()*140, y:60+Math.random()*180});
+            for (var i2=0;i2<5;i2++) people.push({x:30+Math.random()*340, y:20+Math.random()*30});
+            for (var i3=0;i3<4;i3++) people.push({x:30+Math.random()*340, y:260+Math.random()*35});
         } else if (type === 'average') {
-            for (var i=0;i<10;i++) people.push({x:170+Math.random()*140, y:80+Math.random()*180});
-            for (var i2=0;i2<12;i2++) people.push({x:25+Math.random()*430, y:20+Math.random()*45});
-            for (var i3=0;i3<10;i3++) people.push({x:25+Math.random()*430, y:285+Math.random()*45});
+            for (var i=0;i<8;i++) people.push({x:130+Math.random()*140, y:60+Math.random()*180});
+            for (var i2=0;i2<8;i2++) people.push({x:20+Math.random()*360, y:20+Math.random()*35});
+            for (var i3=0;i3<8;i3++) people.push({x:20+Math.random()*360, y:260+Math.random()*35});
         } else if (type === 'high') {
-            for (var i=0;i<25;i++) people.push({x:170+Math.random()*140, y:80+Math.random()*180});
-            for (var i2=0;i2<25;i2++) people.push({x:15+Math.random()*450, y:20+Math.random()*45});
-            for (var i3=0;i3<20;i3++) people.push({x:15+Math.random()*450, y:285+Math.random()*45});
+            for (var i=0;i<15;i++) people.push({x:130+Math.random()*140, y:60+Math.random()*180});
+            for (var i2=0;i2<15;i2++) people.push({x:15+Math.random()*370, y:20+Math.random()*35});
+            for (var i3=0;i3<10;i3++) people.push({x:15+Math.random()*370, y:260+Math.random()*35});
         }
         drawSim();
     }
@@ -308,24 +308,21 @@ const ReduccionSimulator = (function() {
         ctx.fillStyle = '#FFFFFF';
         ctx.fillRect(store.x, store.y, store.width, store.height);
 
-        // Heatmap cobertura — grid 30px
-        var gridSize = 30;
-        for (var x = 0; x < canvas.width; x += gridSize) {
-            for (var y = 0; y < canvas.height; y += gridSize) {
-                var cx = x + gridSize/2, cy = y + gridSize/2;
-                var sig = signalAt(cx, cy);
-                if (sig >= visitasDbm) ctx.fillStyle = 'rgba(44,173,120,0.18)';
-                else if (sig >= paseantesDbm) ctx.fillStyle = 'rgba(231,76,60,0.15)';
-                else if (sig >= rawDbm) ctx.fillStyle = 'rgba(41,128,185,0.08)';
-                else continue;
-                ctx.fillRect(x, y, gridSize, gridSize);
-            }
-        }
+        // Áreas de cobertura (círculos rellenos — sin cálculo de heatmap)
+        // Raw (azul) — el más grande, más transparente
+        ctx.beginPath(); ctx.arc(antenna.x, antenna.y, rawRadius, 0, Math.PI*2);
+        ctx.fillStyle = 'rgba(41,128,185,0.08)'; ctx.fill();
+        // Paseantes (rojo) — mediano
+        ctx.beginPath(); ctx.arc(antenna.x, antenna.y, paseantesRadius, 0, Math.PI*2);
+        ctx.fillStyle = 'rgba(231,76,60,0.15)'; ctx.fill();
+        // Visitas (verde) — el más chico
+        ctx.beginPath(); ctx.arc(antenna.x, antenna.y, visitasRadius, 0, Math.PI*2);
+        ctx.fillStyle = 'rgba(44,173,120,0.18)'; ctx.fill();
 
-        // 3 ondas
-        drawWave(rawRadius, 'rgba(41,128,185,0.5)', [6,10], 'Raw -100 dBm', -Math.PI/4);
-        drawWave(paseantesRadius, 'rgba(231,76,60,0.5)', [8,8], 'Paseantes '+paseantesDbm+' dBm', Math.PI/4);
-        drawWave(visitasRadius, 'rgba(44,173,120,0.5)', [10,6], 'Visitas '+visitasDbm+' dBm', 0);
+        // 3 círculos de borde
+        drawWave(rawRadius, 'rgba(41,128,185,0.5)', 'Raw -100 dBm', -Math.PI/4);
+        drawWave(paseantesRadius, 'rgba(231,76,60,0.5)', 'Paseantes '+paseantesDbm+' dBm', Math.PI/4);
+        drawWave(visitasRadius, 'rgba(44,173,120,0.5)', 'Visitas '+visitasDbm+' dBm', 0);
 
         // Paredes de la tienda
         drawWalls(store, 'TIENDA (80 m\u00b2)', windows);
@@ -398,20 +395,12 @@ const ReduccionSimulator = (function() {
         ctx.fillText('5 m', canvas.width - 60, canvas.height - 5);
     }
 
-    function drawWave(radius, strokeColor, dash, label, labelAngle) {
+    function drawWave(radius, strokeColor, label, labelAngle) {
         radius = Math.max(5, radius);
         ctx.save();
-        // Círculo estático — sin animación
         ctx.beginPath(); ctx.arc(antenna.x, antenna.y, radius, 0, Math.PI*2);
         ctx.strokeStyle = strokeColor; ctx.lineWidth = 2;
         ctx.setLineDash([4,4]); ctx.stroke(); ctx.setLineDash([]);
-        // Círculos concéntricos estáticos (sin wavePhase)
-        for (var r = 10; r < radius; r += 25) {
-            var intensity = Math.max(0, 1 - r / radius);
-            ctx.beginPath(); ctx.arc(antenna.x, antenna.y, r, 0, Math.PI*2);
-            ctx.strokeStyle = strokeColor.replace(/[\d\.]+\)$/, (intensity * 0.3) + ')');
-            ctx.lineWidth = 1.5; ctx.setLineDash(dash); ctx.stroke(); ctx.setLineDash([]);
-        }
         var lx = antenna.x + Math.cos(labelAngle) * radius;
         var ly = antenna.y + Math.sin(labelAngle) * radius;
         ctx.fillStyle = 'rgba(255,255,255,0.85)';
