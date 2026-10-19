@@ -319,6 +319,84 @@ const ReduccionSimulator = (function() {
         }
     }
 
+
+    // Dibujar onda deformada: contorno donde signalAt() = umbral
+    // Muestrea N direcciones, búsqueda binaria de la distancia exacta
+    function drawDeformedWave(thresholdDbm, maxRadius, strokeColor, waveColorPrefix, label, labelAngle, clipToStore) {
+        var N = 72; // cada 5°
+        var points = [];
+
+        for (var i = 0; i <= N; i++) {
+            var angle = (i / N) * Math.PI * 2;
+            var cosA = Math.cos(angle), sinA = Math.sin(angle);
+
+            // Búsqueda binaria: encontrar distancia donde signalAt = threshold
+            var lo = 5, hi = maxRadius, mid, sig;
+            for (var iter = 0; iter < 12; iter++) {
+                mid = (lo + hi) / 2;
+                var px = antenna.x + cosA * mid;
+                var py = antenna.y + sinA * mid;
+                sig = calculateSignalAt(px, py);
+                if (sig >= thresholdDbm) {
+                    lo = mid; // la señal aún llega, buscar más lejos
+                } else {
+                    hi = mid; // la señal no llega, buscar más cerca
+                }
+            }
+            var r = lo;
+            points.push({
+                x: antenna.x + cosA * r,
+                y: antenna.y + sinA * r
+            });
+        }
+
+        ctx.save();
+        if (clipToStore) {
+            ctx.beginPath();
+            ctx.rect(storeBounds.x, storeBounds.y, storeBounds.width, storeBounds.height);
+            ctx.clip();
+        }
+
+        // Contorno principal (línea punteada)
+        ctx.beginPath();
+        ctx.moveTo(points[0].x, points[0].y);
+        for (var p = 1; p < points.length; p++) {
+            ctx.lineTo(points[p].x, points[p].y);
+        }
+        ctx.closePath();
+        ctx.strokeStyle = strokeColor;
+        ctx.lineWidth = 2;
+        ctx.setLineDash([4,4]); ctx.stroke(); ctx.setLineDash([]);
+
+        // Ondas concéntricas animadas (proporción del contorno)
+        for (var frac = (wavePhase / 40) * 0.2; frac < 1; frac += 0.2) {
+            ctx.beginPath();
+            for (var p2 = 0; p2 < points.length; p2++) {
+                // Interpolar entre antena y el punto del contorno
+                var ix = antenna.x + (points[p2].x - antenna.x) * frac;
+                var iy = antenna.y + (points[p2].y - antenna.y) * frac;
+                if (p2 === 0) ctx.moveTo(ix, iy);
+                else ctx.lineTo(ix, iy);
+            }
+            ctx.closePath();
+            var intensity = Math.max(0, 1 - frac);
+            ctx.strokeStyle = waveColorPrefix + (intensity * 0.25) + ')';
+            ctx.lineWidth = 1;
+            ctx.setLineDash([8,12]); ctx.stroke(); ctx.setLineDash([]);
+        }
+
+        // Etiqueta
+        var lx = antenna.x + Math.cos(labelAngle) * lo;
+        var ly = antenna.y + Math.sin(labelAngle) * lo;
+        ctx.fillStyle = 'rgba(255,255,255,0.85)';
+        var lw = ctx.measureText(label).width;
+        ctx.fillRect(lx - lw/2 - 4, ly - 16, lw + 8, 14);
+        ctx.fillStyle = strokeColor.replace(/0\.5\)/, '0.9)');
+        ctx.font = 'bold 11px sans-serif'; ctx.textAlign = 'center';
+        ctx.fillText(label, lx, ly - 6);
+        ctx.restore();
+    }
+
     function drawSim() {
         if (!ctx) return;
         ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -378,87 +456,18 @@ const ReduccionSimulator = (function() {
             }
         }
 
-        // === ONDA RAW (azul) — siempre cubre toda la tienda ===
-        ctx.save();
-        ctx.beginPath();
-        ctx.arc(antenna.x, antenna.y, rawRadius, 0, Math.PI * 2);
-        ctx.strokeStyle = 'rgba(41,128,185,0.5)';
-        ctx.lineWidth = 2;
-        ctx.setLineDash([4,4]); ctx.stroke(); ctx.setLineDash([]);
+        // === ONDAS DEFORMADAS POR ATENUACIÓN ===
+        // Dibujar contorno real: para cada ángulo, buscar dónde signalAt = umbral
+        // Esto hace que las ondas se deformen por personas, anaqueles, paredes, etc.
 
-        // Ondas concéntricas raw
-        for (var r = wavePhase; r < rawRadius; r += 50) {
-            var rawIntensity = Math.max(0, 1 - r / rawRadius);
-            ctx.beginPath();
-            ctx.arc(antenna.x, antenna.y, r, 0, Math.PI * 2);
-            ctx.strokeStyle = 'rgba(52,152,219,' + (rawIntensity * 0.2) + ')';
-            ctx.lineWidth = 1;
-            ctx.setLineDash([8,12]); ctx.stroke(); ctx.setLineDash([]);
-        }
+        // --- ONDA RAW (azul) ---
+        drawDeformedWave(rawDbm, rawRadius, 'rgba(41,128,185,0.5)', 'rgba(52,152,219,', 'Raw -100 dBm', -Math.PI/4, false);
 
-        // Etiqueta raw
-        var rawLabelAngle = -Math.PI / 4;
-        var rawLX = antenna.x + Math.cos(rawLabelAngle) * rawRadius;
-        var rawLY = antenna.y + Math.sin(rawLabelAngle) * rawRadius;
-        ctx.fillStyle = 'rgba(255,255,255,0.85)';
-        var rawLabel = 'Raw -100 dBm';
-        var rawLW = ctx.measureText(rawLabel).width;
-        ctx.fillRect(rawLX - rawLW/2 - 4, rawLY - 16, rawLW + 8, 14);
-        ctx.fillStyle = 'rgba(41,128,185,0.9)';
-        ctx.font = 'bold 11px sans-serif'; ctx.textAlign = 'center';
-        ctx.fillText(rawLabel, rawLX, rawLY - 6);
-        ctx.restore();
+        // --- ONDA PASEANTES (rojo) ---
+        drawDeformedWave(paseantesDbm, paseantesRadius, 'rgba(231,76,60,0.5)', 'rgba(231,76,60,', 'Paseantes ' + paseantesDbm + ' dBm', Math.PI/4, false);
 
-        // === ONDA PASEANTES (rojo) ===
-        ctx.save();
-        ctx.beginPath();
-        ctx.arc(antenna.x, antenna.y, paseantesRadius, 0, Math.PI * 2);
-        ctx.strokeStyle = 'rgba(231,76,60,0.5)';
-        ctx.lineWidth = 2;
-        ctx.setLineDash([4,4]); ctx.stroke(); ctx.setLineDash([]);
-
-        for (var r2 = wavePhase; r2 < paseantesRadius; r2 += 35) {
-            var pasIntensity = Math.max(0, 1 - r2 / paseantesRadius);
-            ctx.beginPath();
-            ctx.arc(antenna.x, antenna.y, r2, 0, Math.PI * 2);
-            ctx.strokeStyle = 'rgba(231,76,60,' + (pasIntensity * 0.25) + ')';
-            ctx.lineWidth = 1;
-            ctx.setLineDash([8,8]); ctx.stroke(); ctx.setLineDash([]);
-        }
-
-        var pasLabelAngle = Math.PI / 4;
-        var pasLX = antenna.x + Math.cos(pasLabelAngle) * paseantesRadius;
-        var pasLY = antenna.y + Math.sin(pasLabelAngle) * paseantesRadius;
-        ctx.fillStyle = 'rgba(255,255,255,0.85)';
-        var pasLabel = 'Paseantes ' + paseantesDbm + ' dBm';
-        var pasLW = ctx.measureText(pasLabel).width;
-        ctx.fillRect(pasLX - pasLW/2 - 4, pasLY - 16, pasLW + 8, 14);
-        ctx.fillStyle = 'rgba(231,76,60,0.9)';
-        ctx.font = 'bold 11px sans-serif';
-        ctx.fillText(pasLabel, pasLX, pasLY - 6);
-        ctx.restore();
-
-        // === ONDA VISITAS (verde) — clip a tienda ===
-        ctx.save();
-        ctx.beginPath();
-        ctx.rect(storeBounds.x, storeBounds.y, storeBounds.width, storeBounds.height);
-        ctx.clip();
-
-        ctx.beginPath();
-        ctx.arc(antenna.x, antenna.y, visitasRadius, 0, Math.PI * 2);
-        ctx.strokeStyle = 'rgba(44,173,120,0.5)';
-        ctx.lineWidth = 2;
-        ctx.setLineDash([4,4]); ctx.stroke(); ctx.setLineDash([]);
-
-        for (var r3 = wavePhase; r3 < visitasRadius; r3 += 30) {
-            var visIntensity = Math.max(0, 1 - r3 / visitasRadius);
-            ctx.beginPath();
-            ctx.arc(antenna.x, antenna.y, r3, 0, Math.PI * 2);
-            ctx.strokeStyle = 'rgba(44,173,120,' + (visIntensity * 0.35) + ')';
-            ctx.lineWidth = 1.5;
-            ctx.setLineDash([10,8]); ctx.stroke(); ctx.setLineDash([]);
-        }
-        ctx.restore();
+        // --- ONDA VISITAS (verde) — clip a tienda ---
+        drawDeformedWave(visitasDbm, visitasRadius, 'rgba(44,173,120,0.5)', 'rgba(44,173,120,', 'Visitas ' + visitasDbm + ' dBm', 0, true);
 
         // Etiqueta visitas
         var visLabelAngle = 0;
