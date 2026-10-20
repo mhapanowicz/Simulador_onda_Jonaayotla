@@ -272,11 +272,13 @@ const RFSimulator = (function() {
                 const visSignal = calculateSignalAt(cx, cy);
                 
                 if (visSignal >= antenna.cutoffdBm) {
-                    // Dentro de calibración = visitas (verde)
-                    ctx.fillStyle = "rgba(44, 173, 120, 0.16)";
+                    // Dentro de calibración = visitas (verde) — intensidad proporcional
+                    var visAlpha = 0.08 + 0.12 * Math.max(0, (visSignal - antenna.cutoffdBm) / (-20 - antenna.cutoffdBm));
+                    ctx.fillStyle = "rgba(44, 173, 120, " + visAlpha + ")";
                 } else if (rawSignal >= RAW_DBM) {
-                    // Detectado por raw pero no es visita (azul tenue)
-                    ctx.fillStyle = "rgba(52, 152, 219, 0.12)";
+                    // Detectado por raw pero no es visita (azul tenue) — intensidad proporcional a señal raw
+                    var rawAlpha = 0.04 + 0.16 * Math.max(0, (rawSignal - RAW_DBM) / (0 - RAW_DBM));
+                    ctx.fillStyle = "rgba(52, 152, 219, " + rawAlpha + ")";
                 } else {
                     // Fuera de raw = no detectado (gris)
                     ctx.fillStyle = "rgba(220, 224, 230, 0.25)";

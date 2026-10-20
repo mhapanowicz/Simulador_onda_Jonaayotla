@@ -322,7 +322,9 @@ const ReduccionSimulator = (function() {
 
     // Dibujar onda deformada: contorno donde signalAt() = umbral
     // Muestrea N direcciones, búsqueda binaria de la distancia exacta
-    function drawDeformedWave(thresholdDbm, maxRadius, strokeColor, waveColorPrefix, label, labelAngle, clipToStore) {
+    function drawDeformedWave(thresholdDbm, maxRadius, strokeColor, waveColorPrefix, label, labelAngle, clipToStore, signalFn) {
+        // signalFn: qué función de señal usar (calculateSignalAt para visitas/paseantes, calculateRawSignalAt para raw)
+        var sigAt = signalFn || calculateSignalAt;
         var N = 72; // cada 5°
         var points = [];
 
@@ -336,7 +338,7 @@ const ReduccionSimulator = (function() {
                 mid = (lo + hi) / 2;
                 var px = antenna.x + cosA * mid;
                 var py = antenna.y + sinA * mid;
-                sig = calculateSignalAt(px, py);
+                sig = sigAt(px, py);
                 if (sig >= thresholdDbm) {
                     lo = mid; // la señal aún llega, buscar más lejos
                 } else {
@@ -444,11 +446,17 @@ const ReduccionSimulator = (function() {
                 var visSig = calculateSignalAt(cx, cy);
                 var pasSig = calculatePaseantesSignalAt(cx, cy);
                 if (visSig >= visitasDbm) {
-                    ctx.fillStyle = 'rgba(44,173,120,0.16)';
+                    // Verde visitas: intensidad proporcional a señal
+                    var visAlpha = 0.10 + 0.10 * Math.max(0, (visSig - visitasDbm) / (0 - visitasDbm));
+                    ctx.fillStyle = 'rgba(44,173,120,' + visAlpha + ')';
                 } else if (pasSig >= paseantesDbm) {
-                    ctx.fillStyle = 'rgba(231,76,60,0.13)';
+                    // Rojo paseantes: intensidad proporcional
+                    var pasAlpha = 0.08 + 0.08 * Math.max(0, (pasSig - paseantesDbm) / (visitasDbm - paseantesDbm));
+                    ctx.fillStyle = 'rgba(231,76,60,' + pasAlpha + ')';
                 } else if (rawSig >= rawDbm) {
-                    ctx.fillStyle = 'rgba(52,152,219,0.10)';
+                    // Azul raw: intensidad proporcional a señal raw (más fuerte = más intenso)
+                    var rawAlpha = 0.05 + 0.15 * Math.max(0, (rawSig - rawDbm) / (0 - rawDbm));
+                    ctx.fillStyle = 'rgba(52,152,219,' + rawAlpha + ')';
                 } else {
                     ctx.fillStyle = 'rgba(220,224,230,0.20)';
                 }
@@ -460,14 +468,41 @@ const ReduccionSimulator = (function() {
         // Dibujar contorno real: para cada ángulo, buscar dónde signalAt = umbral
         // Esto hace que las ondas se deformen por personas, anaqueles, paredes, etc.
 
+        // --- CÍRCULO MÁXIMO TEÓRICO RAW (área máxima sin obstáculos) ---
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(antenna.x, antenna.y, rawRadius, 0, Math.PI * 2);
+        ctx.strokeStyle = 'rgba(41,128,185,0.25)';
+        ctx.lineWidth = 1.5;
+        ctx.setLineDash([3,6]); ctx.stroke(); ctx.setLineDash([]);
+        ctx.restore();
+
+        // --- CÍRCULO MÁXIMO TEÓRICO PASEANTES ---
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(antenna.x, antenna.y, paseantesRadius, 0, Math.PI * 2);
+        ctx.strokeStyle = 'rgba(231,76,60,0.20)';
+        ctx.lineWidth = 1.5;
+        ctx.setLineDash([3,6]); ctx.stroke(); ctx.setLineDash([]);
+        ctx.restore();
+
+        // --- CÍRCULO MÁXIMO TEÓRICO VISITAS ---
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(antenna.x, antenna.y, visitasRadius, 0, Math.PI * 2);
+        ctx.strokeStyle = 'rgba(44,173,120,0.20)';
+        ctx.lineWidth = 1.5;
+        ctx.setLineDash([3,6]); ctx.stroke(); ctx.setLineDash([]);
+        ctx.restore();
+
         // --- ONDA RAW (azul) ---
-        drawDeformedWave(rawDbm, rawRadius, 'rgba(41,128,185,0.5)', 'rgba(52,152,219,', 'Raw -100 dBm', -Math.PI/4, false);
+        drawDeformedWave(rawDbm, rawRadius, 'rgba(41,128,185,0.5)', 'rgba(52,152,219,', 'Raw ' + rawDbm + ' dBm', -Math.PI/4, false, calculateRawSignalAt);
 
         // --- ONDA PASEANTES (rojo) ---
-        drawDeformedWave(paseantesDbm, paseantesRadius, 'rgba(231,76,60,0.5)', 'rgba(231,76,60,', 'Paseantes ' + paseantesDbm + ' dBm', Math.PI/4, false);
+        drawDeformedWave(paseantesDbm, paseantesRadius, 'rgba(231,76,60,0.5)', 'rgba(231,76,60,', 'Paseantes ' + paseantesDbm + ' dBm', Math.PI/4, false, calculateSignalAt);
 
         // --- ONDA VISITAS (verde) — clip a tienda ---
-        drawDeformedWave(visitasDbm, visitasRadius, 'rgba(44,173,120,0.5)', 'rgba(44,173,120,', 'Visitas ' + visitasDbm + ' dBm', 0, true);
+        drawDeformedWave(visitasDbm, visitasRadius, 'rgba(44,173,120,0.5)', 'rgba(44,173,120,', 'Visitas ' + visitasDbm + ' dBm', 0, true, calculateSignalAt);
 
         // Etiqueta visitas
         var visLabelAngle = 0;
