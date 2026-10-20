@@ -1015,7 +1015,7 @@
         <div class="content-card" style="border-left: 4px solid var(--getin-green);">
             <h3 style="font-size: 16px; margin-bottom: 6px; color: var(--getin-green-dark); font-weight: 700;">Visión Natural vs Calibración — Cómo funciona la antena</h3>
             <p style="font-size: 14px; color: var(--text); line-height: 1.55;">
-                La antena <strong>nunca deja de ver</strong>. Su <strong>visión natural (Raw)</strong> llega hasta -100 dBm y <strong>siempre cubre toda la tienda</strong> sin importar la cantidad de personas o anaqueles. La <strong>calibración</strong> define el umbral de visitas: solo las señales entre -20 y -90 dBm cuentan como "dentro de la tienda". Las personas (cuerpos de agua) y anaqueles atenúan la señal de visitas, reduciendo el área efectiva sin afectar la visión natural.
+                La antena <strong>nunca deja de ver</strong>. Su <strong>visión natural (Raw)</strong> llega hasta -100 dBm y cubre la tienda y alrededores. Las personas (cuerpos de agua), anaqueles, paredes y clima <strong>atenúan todas las ondas</strong>, incluyendo el raw. La <strong>calibración</strong> define el umbral de visitas: solo las señales entre -20 y -90 dBm cuentan como "dentro de la tienda".
             </p>
         </div>
 
@@ -1064,7 +1064,7 @@
                     </div>
                     <div class="rf-legend-item">
                         <div class="rf-legend-color" style="background: rgba(52, 152, 219, 0.15); border: 1px dashed #2980B9;"></div>
-                        <span>Visión Natural (Raw 0 a -100 dBm · siempre ve toda la tienda)</span>
+                        <span>Visión Natural (Raw 0 a -100 dBm · atenúa con obstáculos)</span>
                     </div>
                     <div class="rf-legend-item">
                         <div class="rf-legend-color" style="background: #2CAD78;"></div>
@@ -1106,7 +1106,7 @@
 
                     <div class="info-box">
                         <strong>Visión Natural vs Calibración:</strong>
-                        La <strong>visión natural</strong> (azul) muestra el alcance real de la antena de 0 a -100 dBm — <strong>siempre cubre toda la tienda</strong> sin importar personas o anaqueles. La <strong>calibración</strong> (verde) define qué señales cuentan como visita, en el rango de -20 a -90 dBm. Subir el umbral reduce el área de visitas; bajarlo la acerca a la visión natural. Los cuerpos de agua y anaqueles atenúan solo la señal de visitas, no la visión natural.
+                        La <strong>visión natural</strong> (azul) muestra el alcance real de la antena de 0 a -100 dBm. Las personas, anaqueles, paredes y clima <strong>atenúan todas las ondas</strong>, incluyendo el raw. La <strong>calibración</strong> (verde) define qué señales cuentan como visita, en el rango de -20 a -90 dBm. Subir el umbral reduce el área de visitas; bajarlo la acerca a la visión natural.
                     </div>
                 </div>
 
@@ -1119,7 +1119,7 @@
                     <div class="metrics-grid">
                         <div class="metric-box">
                             <div class="number" id="metric-total">0</div>
-                            <div class="label" title="Raw Detections a -100 dBm — siempre ve toda la tienda">Raw Entries</div>
+                            <div class="label" title="Raw Detections a -100 dBm — atenúa con obstáculos">Raw Entries</div>
                         </div>
                         <div class="metric-box">
                             <div class="number" id="metric-detected" style="color: var(--getin-green);">0</div>
@@ -1142,7 +1142,7 @@
                         ¿Cómo funciona la calibración?
                     </h3>
                     <p style="font-size: 12.5px; color: var(--text-muted); line-height: 1.5;">
-                        La antena <strong>nunca deja de detectar</strong>. La visión natural (azul, 0 a -100 dBm) <strong>siempre cubre toda la tienda</strong> sin importar la cantidad de personas o anaqueles. La calibración (verde) define cuáles cuentan como <strong>visitas</strong> (rango -20 a -90 dBm). Los cuerpos de agua y anaqueles atenúan solo la señal de visitas, reduciendo el área de visitas sin cambiar la visión natural.
+                        La antena <strong>nunca deja de detectar</strong>. La visión natural (azul, 0 a -100 dBm) cubre la tienda y alrededores, pero <strong>todas las ondas se atenúan</strong> por personas, anaqueles, paredes y clima. La calibración (verde) define cuáles cuentan como <strong>visitas</strong> (rango -20 a -90 dBm).
                     </p>
                 </div>
             </div>
@@ -1341,7 +1341,7 @@
         <div class="content-card" style="border-left: 4px solid var(--getin-green); margin-bottom: 20px;">
             <h3 style="font-size: 16px; margin-bottom: 6px; color: var(--getin-green-dark); font-weight: 700;">¿Cómo funciona este simulador?</h3>
             <p style="font-size: 14px; color: var(--text); line-height: 1.55;">
-                La antena emite 3 ondas: <strong style="color:#2980B9;">Raw</strong> (señal natural, siempre cubre toda la tienda), <strong style="color:#E74C3C;">Paseantes</strong> (rojo, calibrable) y <strong style="color:#2CAD78;">Visitas</strong> (verde, calibrable, siempre ≤ paseantes). Atenuaciones reales: personas (2.8 dB), anaqueles (5 dB), paredes de concreto (20 dB), ventanas de vidrio (8 dB), lluvia y temperatura.
+                La antena emite 3 ondas: <strong style="color:#2980B9;">Raw</strong> (señal natural, 0 a -100 dBm), <strong style="color:#E74C3C;">Paseantes</strong> (rojo, calibrable) y <strong style="color:#2CAD78;">Visitas</strong> (verde, calibrable, siempre ≤ paseantes). <strong>Todas las ondas se atenúan</strong> por personas (2.8 dB), anaqueles (5 dB), paredes de concreto (20 dB), ventanas de vidrio (8 dB), lluvia y temperatura.
             </p>
         </div>
 

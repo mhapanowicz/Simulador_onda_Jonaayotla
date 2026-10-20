@@ -1,7 +1,7 @@
 const RFSimulator = (function() {
     var canvas, ctx;
     // Modelo de propagacion calibrado por Jonathan:
-    // RAW: 0 a -100 dBm — siempre ve toda la tienda, no se atenúa por cuerpos/anaqueles
+    // RAW: 0 a -100 dBm — atenúa por cuerpos, anaqueles, paredes y clima
     // VISITAS: -20 a -90 dBm — depende de distancia + atenuación por cuerpos de agua y anaqueles
     // Tramo 1 (0-600px): logaritmico, signal = -19.86 - 14.5*log10(dist)
     // Tramo 2 (600-1100px): lineal, de -60 a -100 dBm
@@ -41,7 +41,7 @@ const RFSimulator = (function() {
         if (btnS) btnS.className = mode === 'shelf' ? 'btn btn-primary' : 'btn';
     }
 
-    // dBm de visión natural (raw) — siempre -100, no cambia. El raw SIEMPRE ve toda la tienda.
+    // dBm de visión natural (raw) — varía con atenuación de cuerpos, anaqueles, paredes y clima.
     var RAW_DBM = -100;
 
     function updatePower(val) {
@@ -54,7 +54,7 @@ const RFSimulator = (function() {
         var calRadiusPx = getCoverageRadius();
         var calRadiusM = (calRadiusPx * 0.1).toFixed(1);
         
-        // Distancia de visión natural (raw, -100 dBm) — siempre cubre toda la tienda
+        // Distancia de visión natural (raw, -100 dBm) — alcance máximo teórico, atenúa con obstáculos
         var rawRadiusPx = getRawCoverageRadius();
         var rawRadiusM = (rawRadiusPx * 0.1).toFixed(1);
         
@@ -122,8 +122,8 @@ const RFSimulator = (function() {
         }
     }
 
-    // Radio de vision natural (raw, -100 dBm) sin atenuacion
-    // El raw SIEMPRE cubre toda la tienda + exterior. No se afecta por cuerpos/anaqueles.
+    // Radio de visión natural (raw, -100 dBm) — alcance máximo teórico sin obstáculos
+    // El heatmap calcula la atenuación real punto por punto; este radio es solo el límite visual.
     function getRawCoverageRadius() {
         return 1100; // 110m, -100 dBm — siempre mayor que la tienda
     }
@@ -161,12 +161,12 @@ const RFSimulator = (function() {
         return Math.max(-90, Math.min(-20, rxSignal));
     }
 
-    // Cálculo de señal RAW (visión natural) — SIN atenuación, siempre ve toda la tienda
+    // Cálculo de señal RAW (visión natural) — CON atenuación por cuerpos, anaqueles, paredes y clima
     function calculateRawSignalAt(x, y) {
         const dist = Math.hypot(x - antenna.x, y - antenna.y);
         if (dist < 5) return 0; // Literalmente al lado = 0 dBm
 
-        // Path loss sin atenuación (modelo raw de 0 a -100 dBm)
+        // Path loss (modelo raw de 0 a -100 dBm)
         let pathLoss;
         if (dist <= 600) {
             pathLoss = 14.5 * Math.log10(dist); // 0 dBm a ~-40 dBm
@@ -175,7 +175,23 @@ const RFSimulator = (function() {
             pathLoss = 14.5 * Math.log10(600) + t * 60; // de -40 a -100 dBm
         }
 
-        let rxSignal = -pathLoss;
+        // Atenuación por cuerpos de agua (personas)
+        let waterAtten = 0;
+        people.forEach(p => {
+            const distToLine = pointToSegmentDistance(p, antenna, {x, y});
+            if (distToLine < 20) waterAtten += 2.8;
+        });
+
+        // Atenuación por anaqueles
+        let shelfAtten = 0;
+        shelves.forEach(s => {
+            if (lineIntersectsRect(antenna, {x, y}, s)) shelfAtten += 5.0;
+        });
+
+        // Atenuación por clima (lluvia + temperatura)
+        let climateAtten = (typeof lluviaAtten !== 'undefined' ? lluviaAtten : 0) + (typeof tempAtten !== 'undefined' ? tempAtten : 0);
+
+        let rxSignal = -pathLoss - waterAtten - shelfAtten - climateAtten;
         // Clamp raw: 0 a -100 dBm
         return Math.max(-100, Math.min(0, rxSignal));
     }
@@ -246,7 +262,7 @@ const RFSimulator = (function() {
         // === Heatmap de 3 zonas ===
         // Verde: dentro de calibración (visitas)
         // Azul tenue: entre calibración y raw (detectado pero no visita)
-        // El raw SIEMPRE ve toda la tienda, así que dentro de la tienda siempre hay al menos azul
+        // El raw cubre la tienda pero puede reducirse por atenuación de obstáculos
         const gridSize = 14;
         for (let x = 0; x < canvas.width; x += gridSize) {
             for (let y = 0; y < canvas.height; y += gridSize) {
@@ -269,8 +285,8 @@ const RFSimulator = (function() {
             }
         }
 
-        // === ONDA DE VISIÓN NATURAL (Raw, azul) — siempre cubre toda la tienda ===
-        // Se dibuja fuera y dentro de la tienda — la antena nunca deja de ver
+        // === ONDA DE VISIÓN NATURAL (Raw, azul) — cubre tienda + exterior, atenúa con obstáculos ===
+        // Se dibuja fuera y dentro de la tienda
         ctx.save();
         // No clip a tienda: la onda raw puede extender fuera
 
@@ -402,7 +418,7 @@ const RFSimulator = (function() {
             if (rawSignal >= RAW_DBM) rawEntriesCount++;
 
             const isInsideCalibration = signal >= antenna.cutoffdBm;
-            const isInsideRaw = rawSignal >= RAW_DBM; // raw siempre ve toda la tienda
+            const isInsideRaw = rawSignal >= RAW_DBM; // raw puede reducirse por atenuación
             if (isInsideCalibration) detectedInStoreCount++;
 
             // Color: verde = visita, naranja = raw pero fuera de calibración, rojo = fuera de raw
