@@ -24,6 +24,7 @@ const ReduccionSimulator = (function() {
     // Atenuaciones
     var WALL_ATTEN = 20;      // Concreto
     var WINDOW_ATTEN = 8;     // Vidrio
+    var DOOR_ATTEN = 0;       // Puerta abierta (sin material)
     var lluviaAtten = 0;
     var tempAtten = 0;
 
@@ -31,6 +32,11 @@ const ReduccionSimulator = (function() {
     var windows = [
         { wall: 'left',   start: 120, end: 220 },  // ventana izquierda (~10m)
         { wall: 'bottom', start: 200, end: 340 }   // ventana abajo (~14m)
+    ];
+
+    // Puertas abiertas (entrada sin material — 0 dB atenuación)
+    var doors = [
+        { wall: 'top', start: 100, end: 240 }   // entrada principal (pared superior, 140px = 14m)
     ];
 
     // Potencias: 0-100 donde 100 = más sensible (ve más lejos)
@@ -160,7 +166,7 @@ const ReduccionSimulator = (function() {
         var inAnt = isInStore(ant.x, ant.y);
         var inPt = isInStore(x, y);
         if (inAnt !== inPt) {
-            wallAtten = wallAttenForExit(storeBounds, windows, ant, tgt);
+            wallAtten = wallAttenForExit(storeBounds, windows, doors, ant, tgt);
         }
         var climateAtten = lluviaAtten + tempAtten;
 
@@ -208,7 +214,7 @@ const ReduccionSimulator = (function() {
         var inAnt = isInStore(ant.x, ant.y);
         var inPt = isInStore(x, y);
         if (inAnt !== inPt) {
-            wallAtten = wallAttenForExit(storeBounds, windows, ant, tgt);
+            wallAtten = wallAttenForExit(storeBounds, windows, doors, ant, tgt);
         }
 
         // Atenuación por clima
@@ -223,36 +229,51 @@ const ReduccionSimulator = (function() {
         return calculateSignalAt(x, y);
     }
 
-    function wallAttenForExit(bounds, wins, ant, tgt) {
+    function wallAttenForExit(bounds, wins, doors, ant, tgt) {
         // Izquierda
         if ((ant.x <= bounds.x && tgt.x >= bounds.x) || (ant.x >= bounds.x && tgt.x <= bounds.x)) {
             var t = (bounds.x - ant.x) / (tgt.x - ant.x);
             var cy = ant.y + t * (tgt.y - ant.y);
-            if (cy >= bounds.y && cy <= bounds.y + bounds.height)
+            if (cy >= bounds.y && cy <= bounds.y + bounds.height) {
+                if (passesDoor(doors, 'left', cy)) return DOOR_ATTEN;
                 return passesWindow(wins, 'left', cy) ? WINDOW_ATTEN : WALL_ATTEN;
+            }
         }
         // Derecha
         if ((ant.x <= bounds.x + bounds.width && tgt.x >= bounds.x + bounds.width) || (ant.x >= bounds.x + bounds.width && tgt.x <= bounds.x + bounds.width)) {
             var t2 = ((bounds.x + bounds.width) - ant.x) / (tgt.x - ant.x);
             var cy2 = ant.y + t2 * (tgt.y - ant.y);
-            if (cy2 >= bounds.y && cy2 <= bounds.y + bounds.height)
+            if (cy2 >= bounds.y && cy2 <= bounds.y + bounds.height) {
+                if (passesDoor(doors, 'right', cy2)) return DOOR_ATTEN;
                 return passesWindow(wins, 'right', cy2) ? WINDOW_ATTEN : WALL_ATTEN;
+            }
         }
         // Arriba
         if ((ant.y <= bounds.y && tgt.y >= bounds.y) || (ant.y >= bounds.y && tgt.y <= bounds.y)) {
             var t3 = (bounds.y - ant.y) / (tgt.y - ant.y);
             var cx = ant.x + t3 * (tgt.x - ant.x);
-            if (cx >= bounds.x && cx <= bounds.x + bounds.width)
+            if (cx >= bounds.x && cx <= bounds.x + bounds.width) {
+                if (passesDoor(doors, 'top', cx)) return DOOR_ATTEN;
                 return passesWindow(wins, 'top', cx) ? WINDOW_ATTEN : WALL_ATTEN;
+            }
         }
         // Abajo
         if ((ant.y <= bounds.y + bounds.height && tgt.y >= bounds.y + bounds.height) || (ant.y >= bounds.y + bounds.height && tgt.y <= bounds.y + bounds.height)) {
             var t4 = ((bounds.y + bounds.height) - ant.y) / (tgt.y - ant.y);
             var cx2 = ant.x + t4 * (tgt.x - ant.x);
-            if (cx2 >= bounds.x && cx2 <= bounds.x + bounds.width)
+            if (cx2 >= bounds.x && cx2 <= bounds.x + bounds.width) {
+                if (passesDoor(doors, 'bottom', cx2)) return DOOR_ATTEN;
                 return passesWindow(wins, 'bottom', cx2) ? WINDOW_ATTEN : WALL_ATTEN;
+            }
         }
         return 0;
+    }
+
+    function passesDoor(doors, wall, pos) {
+        for (var i = 0; i < doors.length; i++) {
+            if (doors[i].wall === wall && pos >= doors[i].start && pos <= doors[i].end) return true;
+        }
+        return false;
     }
 
     function passesWindow(wins, wall, pos) {
@@ -692,14 +713,38 @@ const ReduccionSimulator = (function() {
         ctx.fillStyle = '#2C3E50'; ctx.font = 'bold 13px sans-serif'; ctx.textAlign = 'center';
         ctx.fillText('TIENDA GETIN', bounds.x + bounds.width/2, bounds.y - 14);
 
-        // Puerta (entrada principal) — gap en pared superior
-        var doorX = bounds.x + 60;
-        var doorW = 140;
-        ctx.clearRect(doorX, bounds.y - bounds.wallThickness/2 - 1, doorW, bounds.wallThickness + 2);
-        ctx.strokeStyle = '#2CAD78'; ctx.lineWidth = 3;
-        ctx.beginPath(); ctx.moveTo(doorX, bounds.y - 2); ctx.lineTo(doorX + doorW, bounds.y - 2); ctx.stroke();
-        ctx.fillStyle = '#2CAD78'; ctx.font = 'bold 10px sans-serif'; ctx.textAlign = 'center';
-        ctx.fillText('ENTRADA', doorX + doorW/2, bounds.y - 8);
+        // Puertas abiertas (entrada sin material — 0 dB atenuación)
+        doors.forEach(function(door) {
+            ctx.save();
+            if (door.wall === 'top') {
+                ctx.clearRect(door.start, bounds.y - bounds.wallThickness/2 - 1, door.end - door.start, bounds.wallThickness + 2);
+                ctx.strokeStyle = '#2CAD78'; ctx.lineWidth = 3;
+                ctx.beginPath(); ctx.moveTo(door.start, bounds.y - 2); ctx.lineTo(door.end, bounds.y - 2); ctx.stroke();
+                ctx.fillStyle = '#2CAD78'; ctx.font = 'bold 10px sans-serif'; ctx.textAlign = 'center';
+                ctx.fillText('ENTRADA', (door.start + door.end) / 2, bounds.y - 8);
+            } else if (door.wall === 'bottom') {
+                ctx.clearRect(door.start, bounds.y + bounds.height - bounds.wallThickness/2 - 1, door.end - door.start, bounds.wallThickness + 2);
+                ctx.strokeStyle = '#2CAD78'; ctx.lineWidth = 3;
+                ctx.beginPath(); ctx.moveTo(door.start, bounds.y + bounds.height + 2); ctx.lineTo(door.end, bounds.y + bounds.height + 2); ctx.stroke();
+                ctx.fillStyle = '#2CAD78'; ctx.font = 'bold 10px sans-serif'; ctx.textAlign = 'center';
+                ctx.fillText('ENTRADA', (door.start + door.end) / 2, bounds.y + bounds.height + 18);
+            } else if (door.wall === 'left') {
+                ctx.clearRect(bounds.x - bounds.wallThickness/2 - 1, door.start, bounds.wallThickness + 2, door.end - door.start);
+                ctx.strokeStyle = '#2CAD78'; ctx.lineWidth = 3;
+                ctx.beginPath(); ctx.moveTo(bounds.x - 2, door.start); ctx.lineTo(bounds.x - 2, door.end); ctx.stroke();
+                ctx.save(); ctx.translate(bounds.x - 14, (door.start + door.end) / 2); ctx.rotate(-Math.PI/2);
+                ctx.fillStyle = '#2CAD78'; ctx.font = 'bold 10px sans-serif'; ctx.textAlign = 'center';
+                ctx.fillText('ENTRADA', 0, 0); ctx.restore();
+            } else if (door.wall === 'right') {
+                ctx.clearRect(bounds.x + bounds.width - bounds.wallThickness/2 - 1, door.start, bounds.wallThickness + 2, door.end - door.start);
+                ctx.strokeStyle = '#2CAD78'; ctx.lineWidth = 3;
+                ctx.beginPath(); ctx.moveTo(bounds.x + bounds.width + 2, door.start); ctx.lineTo(bounds.x + bounds.width + 2, door.end); ctx.stroke();
+                ctx.save(); ctx.translate(bounds.x + bounds.width + 14, (door.start + door.end) / 2); ctx.rotate(Math.PI/2);
+                ctx.fillStyle = '#2CAD78'; ctx.font = 'bold 10px sans-serif'; ctx.textAlign = 'center';
+                ctx.fillText('ENTRADA', 0, 0); ctx.restore();
+            }
+            ctx.restore();
+        });
 
         // Etiqueta de ventanas
         ctx.fillStyle = '#5DADE2'; ctx.font = 'bold 9px sans-serif';
