@@ -7,6 +7,8 @@ const ReduccionSimulator = (function() {
     var isDragging = false;
     var draggedPerson = null;
     var isDraggingAntenna = false;
+    var isDraggingCashier = false;
+    var cashierDragOffset = { x: 0, y: 0 };
     var isAnimRunning = false;
     var isPaused = false;
     var zoomLevel = 1; // 1 = normal, 0.5 = vista amplia
@@ -25,6 +27,7 @@ const ReduccionSimulator = (function() {
     var WALL_ATTEN = 20;      // Concreto
     var WINDOW_ATTEN = 8;     // Vidrio
     var DOOR_ATTEN = 0;       // Puerta abierta (sin material)
+    var CASHIER_ATTEN = 7;   // Área de cajas (mobiliario + equipos)
     var lluviaAtten = 0;
     var tempAtten = 0;
 
@@ -68,9 +71,11 @@ const ReduccionSimulator = (function() {
         var btnP = document.getElementById('btn-red-add-person');
         var btnS = document.getElementById('btn-red-add-shelf');
         var btnA = document.getElementById('btn-red-move-antenna');
+        var btnC = document.getElementById('btn-red-move-cashier');
         if (btnP) btnP.className = mode === 'person' ? 'btn btn-primary' : 'btn';
         if (btnS) btnS.className = mode === 'shelf' ? 'btn btn-primary' : 'btn';
         if (btnA) btnA.className = mode === 'antenna' ? 'btn btn-primary' : 'btn';
+        if (btnC) btnC.className = mode === 'cashier' ? 'btn btn-primary' : 'btn';
     }
 
     function updatePaseantes(val) {
@@ -115,6 +120,23 @@ const ReduccionSimulator = (function() {
     function isInStore(x, y) {
         return x >= storeBounds.x && x <= storeBounds.x + storeBounds.width &&
                y >= storeBounds.y && y <= storeBounds.y + storeBounds.height;
+    }
+
+    function isInCashierZone(x, y) {
+        return x >= cashierZone.x && x <= cashierZone.x + cashierZone.width &&
+               y >= cashierZone.y && y <= cashierZone.y + cashierZone.height;
+    }
+
+    // Atenuación por área de cajas:
+    // - Si la antena está dentro del área: +7 dB a toda la señal (penalización global)
+    // - Si la línea antena→punto atraviesa el área: +7 dB adicionales
+    function calculateCashierAtten(ant, tgt) {
+        var atten = 0;
+        // Caso 1: antena dentro del área de cajas
+        if (isInCashierZone(ant.x, ant.y)) atten += CASHIER_ATTEN;
+        // Caso 2: la señal atraviesa el área de cajas
+        if (lineIntersectsRect(ant, tgt, cashierZone)) atten += CASHIER_ATTEN;
+        return atten;
     }
 
     function potenciaToDbm(p) { return -p; }
@@ -169,8 +191,9 @@ const ReduccionSimulator = (function() {
             wallAtten = wallAttenForExit(storeBounds, windows, doors, ant, tgt);
         }
         var climateAtten = lluviaAtten + tempAtten;
+        var cashierAtten = calculateCashierAtten(ant, tgt);
 
-        var rxSignal = -pathLoss - waterAtten - shelfAtten - wallAtten - climateAtten;
+        var rxSignal = -pathLoss - waterAtten - shelfAtten - wallAtten - climateAtten - cashierAtten;
         return Math.min(0, rxSignal); // sin clamp inferior — si baja de -100 está fuera de rango
     }
 
@@ -219,8 +242,9 @@ const ReduccionSimulator = (function() {
 
         // Atenuación por clima
         var climateAtten = lluviaAtten + tempAtten;
+        var cashierAtten = calculateCashierAtten(ant, tgt);
 
-        var rxSignal = -pathLoss - waterAtten - shelfAtten - wallAtten - climateAtten;
+        var rxSignal = -pathLoss - waterAtten - shelfAtten - wallAtten - climateAtten - cashierAtten;
         return Math.min(-20, rxSignal); // sin clamp inferior — si baja de -100 está fuera de rango
     }
 
@@ -543,14 +567,20 @@ const ReduccionSimulator = (function() {
         drawWallsWithWindows(storeBounds, windows);
 
         // Zona de cajas
-        ctx.fillStyle = "#EAECEE";
-        ctx.strokeStyle = "#BDC3C7";
-        ctx.lineWidth = 1.5;
+        ctx.fillStyle = mode === 'cashier' ? 'rgba(149,165,166,0.35)' : '#EAECEE';
+        ctx.strokeStyle = mode === 'cashier' ? '#27AE60' : '#BDC3C7';
+        ctx.lineWidth = mode === 'cashier' ? 2.5 : 1.5;
+        if (mode === 'cashier') ctx.setLineDash([6,4]);
         ctx.fillRect(cashierZone.x, cashierZone.y, cashierZone.width, cashierZone.height);
         ctx.strokeRect(cashierZone.x, cashierZone.y, cashierZone.width, cashierZone.height);
-        ctx.fillStyle = "#7F8C8D";
-        ctx.font = "bold 11px sans-serif"; ctx.textAlign = "center";
-        ctx.fillText("ÁREA DE CAJAS", cashierZone.x + cashierZone.width/2, cashierZone.y + cashierZone.height/2 + 16);
+        ctx.setLineDash([]);
+        ctx.fillStyle = mode === 'cashier' ? '#27AE60' : '#7F8C8D';
+        ctx.font = 'bold 11px sans-serif'; ctx.textAlign = 'center';
+        ctx.fillText('ÁREA DE CAJAS', cashierZone.x + cashierZone.width/2, cashierZone.y + cashierZone.height/2 + 16);
+        if (mode === 'cashier') {
+            ctx.font = '9px sans-serif';
+            ctx.fillText('arrastrar para mover', cashierZone.x + cashierZone.width/2, cashierZone.y + cashierZone.height/2 + 30);
+        }
 
         // Anaqueles
         ctx.fillStyle = "#34495E";
@@ -771,6 +801,19 @@ const ReduccionSimulator = (function() {
                 else { antenna.x = pos.x; antenna.y = pos.y; }
                 return;
             }
+            if (mode === 'cashier') {
+                // Click dentro del área de cajas → iniciar arrastre
+                if (isInCashierZone(pos.x, pos.y)) {
+                    isDraggingCashier = true;
+                    // Calcular offset para que no salte
+                    cashierDragOffset = { x: pos.x - cashierZone.x, y: pos.y - cashierZone.y };
+                } else {
+                    // Click fuera → mover el centro del área de cajas al punto clickeado
+                    cashierZone.x = Math.max(storeBounds.x, Math.min(storeBounds.x + storeBounds.width - cashierZone.width, pos.x - cashierZone.width/2));
+                    cashierZone.y = Math.max(storeBounds.y, Math.min(storeBounds.y + storeBounds.height - cashierZone.height, pos.y - cashierZone.height/2));
+                }
+                return;
+            }
             var hit = people.findIndex(function(p) { return Math.hypot(p.x - pos.x, p.y - pos.y) < 16; });
             if (hit !== -1) { draggedPerson = hit; isDragging = true; return; }
             if (mode === 'person') people.push({x: pos.x, y: pos.y});
@@ -779,9 +822,15 @@ const ReduccionSimulator = (function() {
         var handleMove = function(e) {
             var pos = getPos(e);
             if (isDraggingAntenna) { antenna.x = Math.max(10, Math.min(canvas.width-10, pos.x)); antenna.y = Math.max(10, Math.min(canvas.height-10, pos.y)); return; }
+            if (isDraggingCashier) {
+                // Mantener el área de cajas dentro de la tienda
+                cashierZone.x = Math.max(storeBounds.x, Math.min(storeBounds.x + storeBounds.width - cashierZone.width, pos.x - cashierDragOffset.x));
+                cashierZone.y = Math.max(storeBounds.y, Math.min(storeBounds.y + storeBounds.height - cashierZone.height, pos.y - cashierDragOffset.y));
+                return;
+            }
             if (isDragging && draggedPerson !== null) { people[draggedPerson].x = pos.x; people[draggedPerson].y = pos.y; }
         };
-        var handleUp = function() { isDragging = false; draggedPerson = null; isDraggingAntenna = false; };
+        var handleUp = function() { isDragging = false; draggedPerson = null; isDraggingAntenna = false; isDraggingCashier = false; };
 
         canvas.addEventListener('mousedown', handleDown);
         canvas.addEventListener('mousemove', handleMove);
