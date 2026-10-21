@@ -1167,7 +1167,7 @@
         <div class="content-card" style="border-left: 4px solid var(--getin-green);">
             <h3 style="font-size: 16px; margin-bottom: 6px; color: var(--getin-green-dark); font-weight: 700;">¿Qué muestra esta simulación?</h3>
             <p style="font-size: 14px; color: var(--text); line-height: 1.55;">
-                Esta simulación muestra dos tiendas pegadas separadas por un muro de concreto de 15cm. <strong>Todas las paredes son de concreto</strong> (20 dBm atenuación). Cada tienda tiene <strong>2 ventanas de vidrio</strong> (8 dBm atenuación) que dejan pasar más señal que el concreto. La antena está en la Tienda A (izquierda). Con una calibración correcta, las personas de la Tienda B no se cuentan como visitas. Si el umbral es muy bajo, los dispositivos de la tienda vecina pueden registrarse como visitas falsas (contaminación cruzada) a través de las ventanas.
+                Esta simulación muestra dos tiendas pegadas separadas por un muro de concreto de 15cm. <strong>Todas las paredes son de concreto</strong> (20 dBm atenuación) con <strong>ventanas de vidrio</strong> (8 dBm atenuación). La antena está en la Tienda A (izquierda). Puede elegir entre <strong>Tienda Convencional</strong> (paredes de concreto con ventanas pequeñas) y <strong>Fachada Vitrina</strong> (la pared superior de la fachada es toda de vidrio excepto la puerta, permitiendo mayor paso de señal). Si el umbral es muy bajo, los dispositivos de la tienda vecina pueden registrarse como visitas falsas (contaminación cruzada).
             </p>
         </div>
 
@@ -1191,6 +1191,14 @@
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
                             ⏸ Pausar
                         </button>
+                    </div>
+
+                    <div class="tool-group">
+                        <label style="font-size: 12px; font-weight: 600; color: var(--text-muted);">Arquitectura:</label>
+                        <select id="architecture-select-vecina" onchange="VecinaSimulator.setArchitecture(this.value)" style="padding: 6px 10px; border-radius: 6px; border: 1px solid #ccc; font-size: 12px;">
+                            <option value="convencional" selected>Tienda Convencional</option>
+                            <option value="fachada_vitrina">Fachada Vitrina</option>
+                        </select>
                     </div>
 
                     <div class="tool-group">

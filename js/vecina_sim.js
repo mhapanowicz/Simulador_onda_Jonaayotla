@@ -19,17 +19,63 @@ const VecinaSimulator = (function() {
     var WINDOW_ATTEN_DBM = 8;     // Atenuación ventana de vidrio (menor que concreto)
     var RAW_DBM = -100;
 
-    // Ventanas: cada una es un segmento en una pared. La señal que pasa por una ventana se atenúa menos.
-    // Tienda A: 2 ventanas (una en pared izquierda, una en pared inferior)
-    var windowsA = [
-        { wall: 'left',   start: 120, end: 180 },  // Ventana en pared izquierda de Tienda A
-        { wall: 'bottom', start: 200, end: 260 }   // Ventana en pared inferior de Tienda A
-    ];
-    // Tienda B: 2 ventanas (una en pared derecha, una en pared inferior)
-    var windowsB = [
-        { wall: 'right',  start: 120, end: 180 },  // Ventana en pared derecha de Tienda B
-        { wall: 'bottom', start: 200, end: 260 }   // Ventana en pared inferior de Tienda B
-    ];
+    // Arquitectura actual
+    var currentArchitecture = 'convencional';
+
+    // Definición de arquitecturas
+    // Cada arquitectura define: ventanasA, ventanasB, y qué pared es "fachada vitrina" (todo vidrio excepto puerta)
+    // Para fachada_vitrina: la pared 'top' es toda vidrio excepto el segmento de la puerta
+    var architectures = {
+        convencional: {
+            name: 'Tienda Convencional',
+            // Tienda A: 2 ventanas (una en pared izquierda, una en pared inferior)
+            windowsA: [
+                { wall: 'left',   start: 120, end: 180 },  // Ventana en pared izquierda de Tienda A
+                { wall: 'bottom', start: 200, end: 260 }   // Ventana en pared inferior de Tienda A
+            ],
+            // Tienda B: 2 ventanas (una en pared derecha, una en pared inferior)
+            windowsB: [
+                { wall: 'right',  start: 120, end: 180 },  // Ventana en pared derecha de Tienda B
+                { wall: 'bottom', start: 200, end: 260 }   // Ventana en pared inferior de Tienda B
+            ],
+            // La pared superior es concreto con puerta (gap) — comportamiento normal
+            topWallMaterial: 'concrete',
+            // Puerta (gap en pared superior) — coords relativas al bounds de cada tienda
+            doorA: { start: 60, end: 200 },   // gap en pared superior de tienda A
+            doorB: { start: 60, end: 200 }    // gap en pared superior de tienda B
+        },
+        fachada_vitrina: {
+            name: 'Fachada Vitrina',
+            // La pared superior es toda de vidrio (fachada vitrina) excepto la puerta
+            // No hay ventanas adicionales en otras paredes (la fachada vitrina reemplaza las ventanas superiores)
+            // Ventanas en paredes laterales/inferiores se mantienen
+            windowsA: [
+                { wall: 'left',   start: 120, end: 180 },  // Ventana en pared izquierda de Tienda A
+                { wall: 'bottom', start: 200, end: 260 }   // Ventana en pared inferior de Tienda A
+            ],
+            windowsB: [
+                { wall: 'right',  start: 120, end: 180 },  // Ventana en pared derecha de Tienda B
+                { wall: 'bottom', start: 200, end: 260 }   // Ventana en pared inferior de Tienda B
+            ],
+            // La pared superior es vidrio (fachada vitrina) excepto la puerta
+            topWallMaterial: 'glass',
+            // Puerta (gap en pared superior) — la puerta es concreto/opaca
+            doorA: { start: 60, end: 200 },
+            doorB: { start: 60, end: 200 }
+        }
+    };
+
+    // Ventanas activas (se actualizan al cambiar arquitectura)
+    var windowsA = architectures.convencional.windowsA;
+    var windowsB = architectures.convencional.windowsB;
+
+    function setArchitecture(archId) {
+        var arch = architectures[archId];
+        if (!arch) return;
+        currentArchitecture = archId;
+        windowsA = arch.windowsA;
+        windowsB = arch.windowsB;
+    }
 
     function initSim() {
         canvas = document.getElementById('vecinaCanvas');
@@ -178,7 +224,9 @@ const VecinaSimulator = (function() {
 
     // Calcula la atenuación al salir/entrar por una pared de una tienda,
     // considerando ventanas (menor atenuación) vs concreto (atenuación completa).
+    // Para fachada_vitrina: la pared superior es toda vidrio (8dB) excepto la puerta (concreto 20dB).
     function wallAttenForExit(bounds, windows, ant, tgt) {
+        var arch = architectures[currentArchitecture];
         // Determinar por qué pared sale/entra la línea
         // Pared izquierda (x = bounds.x)
         if ((ant.x <= bounds.x && tgt.x >= bounds.x) || (ant.x >= bounds.x && tgt.x <= bounds.x)) {
@@ -186,7 +234,6 @@ const VecinaSimulator = (function() {
             var t = (bounds.x - ant.x) / (tgt.x - ant.x);
             var crossY = ant.y + t * (tgt.y - ant.y);
             if (crossY >= bounds.y && crossY <= bounds.y + bounds.height) {
-                // ¿Cruza por una ventana en la pared izquierda?
                 if (passesThroughWindow(windows, 'left', crossY)) return WINDOW_ATTEN_DBM;
                 return WALL_ATTEN_DBM;
             }
@@ -205,6 +252,19 @@ const VecinaSimulator = (function() {
             var t3 = (bounds.y - ant.y) / (tgt.y - ant.y);
             var crossX = ant.x + t3 * (tgt.x - ant.x);
             if (crossX >= bounds.x && crossX <= bounds.x + bounds.width) {
+                // Fachada vitrina: pared superior es vidrio excepto la puerta
+                if (arch.topWallMaterial === 'glass') {
+                    // Determinar si el cruce cae en la puerta (gap) o en el vidrio
+                    var door = (bounds === storeBoundsA) ? arch.doorA : arch.doorB;
+                    var crossPos = crossX - bounds.x; // posición relativa al bounds
+                    if (crossPos >= door.start && crossPos <= door.end) {
+                        // Puerta: concreto (opaca)
+                        return WALL_ATTEN_DBM;
+                    }
+                    // Resto de la fachada: vidrio
+                    return WINDOW_ATTEN_DBM;
+                }
+                // Arquitectura convencional: verificar ventanas normales
                 if (passesThroughWindow(windows, 'top', crossX)) return WINDOW_ATTEN_DBM;
                 return WALL_ATTEN_DBM;
             }
@@ -348,19 +408,69 @@ const VecinaSimulator = (function() {
     }
 
     function drawStoreWalls(storeBounds, label, entranceLabel, windows, skipWall) {
+        var arch = architectures[currentArchitecture];
         // Store Outer Walls — concreto (mismo material que el muro divisorio)
         // skipWall: 'right' u 'left' — para no dibujar la pared compartida (muro divisorio)
         ctx.strokeStyle = "#8B7355";
         ctx.lineWidth = storeBounds.wallThickness;
 
         // Dibujar paredes individualmente (excepto la que se omite por ser compartida)
-        // Pared superior
+        // Pared superior — en fachada_vitrina se dibuja diferente (vidrio + puerta concreto)
         if (skipWall !== 'top') {
-            ctx.beginPath();
-            ctx.moveTo(storeBounds.x - storeBounds.wallThickness/2, storeBounds.y);
-            ctx.lineTo(storeBounds.x + storeBounds.width + storeBounds.wallThickness/2, storeBounds.y);
-            ctx.stroke();
+            if (arch.topWallMaterial === 'glass') {
+                // Fachada Vitrina: pared superior toda de vidrio excepto puerta
+                var door = (storeBounds === storeBoundsA) ? arch.doorA : arch.doorB;
+                // Segmento izquierdo de la puerta (vidrio)
+                ctx.fillStyle = "rgba(135, 206, 235, 0.6)";
+                ctx.fillRect(storeBounds.x, storeBounds.y - storeBounds.wallThickness/2, door.start, storeBounds.wallThickness);
+                ctx.strokeStyle = "#5DADE2";
+                ctx.lineWidth = 1.5;
+                ctx.strokeRect(storeBounds.x, storeBounds.y - storeBounds.wallThickness/2, door.start, storeBounds.wallThickness);
+                // Segmento derecho de la puerta (vidrio)
+                ctx.fillStyle = "rgba(135, 206, 235, 0.6)";
+                ctx.fillRect(storeBounds.x + door.end, storeBounds.y - storeBounds.wallThickness/2, storeBounds.width - door.end, storeBounds.wallThickness);
+                ctx.strokeStyle = "#5DADE2";
+                ctx.lineWidth = 1.5;
+                ctx.strokeRect(storeBounds.x + door.end, storeBounds.y - storeBounds.wallThickness/2, storeBounds.width - door.end, storeBounds.wallThickness);
+                // Puerta (concreto opaco)
+                ctx.strokeStyle = "#8B7355";
+                ctx.lineWidth = storeBounds.wallThickness;
+                ctx.beginPath();
+                ctx.moveTo(storeBounds.x + door.start, storeBounds.y);
+                ctx.lineTo(storeBounds.x + door.end, storeBounds.y);
+                ctx.stroke();
+                // Textura concreto solo en la puerta
+                ctx.strokeStyle = "#6B5B45";
+                ctx.lineWidth = 1;
+                for (var xd = storeBounds.x + door.start; xd < storeBounds.x + door.end; xd += 8) {
+                    ctx.beginPath();
+                    ctx.moveTo(xd, storeBounds.y - storeBounds.wallThickness/2);
+                    ctx.lineTo(xd + 8, storeBounds.y + storeBounds.wallThickness/2);
+                    ctx.stroke();
+                }
+                // Etiqueta FACHADA VITRINA
+                ctx.fillStyle = "#2980B9";
+                ctx.font = "bold 7px sans-serif";
+                ctx.textAlign = "center";
+                var vitrinaLabelX = storeBounds.x + (door.start / 2);
+                ctx.fillText("FACHADA VITRINA", vitrinaLabelX, storeBounds.y - storeBounds.wallThickness/2 - 6);
+                var vitrinaLabelX2 = storeBounds.x + door.end + (storeBounds.width - door.end) / 2;
+                ctx.fillText("FACHADA VITRINA", vitrinaLabelX2, storeBounds.y - storeBounds.wallThickness/2 - 6);
+                // Reset stroke style para las demá s paredes
+                ctx.strokeStyle = "#8B7355";
+                ctx.lineWidth = storeBounds.wallThickness;
+            } else {
+                // Arquitectura convencional: pared superior de concreto normal
+                ctx.beginPath();
+                ctx.moveTo(storeBounds.x - storeBounds.wallThickness/2, storeBounds.y);
+                ctx.lineTo(storeBounds.x + storeBounds.width + storeBounds.wallThickness/2, storeBounds.y);
+                ctx.stroke();
+            }
         }
+        // Reset estilo después de la pared superior
+        ctx.strokeStyle = "#8B7355";
+        ctx.lineWidth = storeBounds.wallThickness;
+
         // Pared inferior
         if (skipWall !== 'bottom') {
             ctx.beginPath();
@@ -386,8 +496,8 @@ const VecinaSimulator = (function() {
         // Textura de líneas diagonales en las paredes (concreto)
         ctx.strokeStyle = "#6B5B45";
         ctx.lineWidth = 1;
-        // Pared superior
-        if (skipWall !== 'top') {
+        // Pared superior — solo textura concreto si NO es fachada vitrina
+        if (skipWall !== 'top' && arch.topWallMaterial !== 'glass') {
         for (var x = storeBounds.x; x < storeBounds.x + storeBounds.width; x += 8) {
             ctx.beginPath();
             ctx.moveTo(x, storeBounds.y - storeBounds.wallThickness/2);
@@ -490,10 +600,19 @@ const VecinaSimulator = (function() {
         ctx.fillText(label, storeBounds.x + storeBounds.width/2, storeBounds.y - 20);
 
         // Entrance (gap in the top wall)
-        ctx.clearRect(storeBounds.x + 60, storeBounds.y - storeBounds.wallThickness, 140, storeBounds.wallThickness + 2);
-        ctx.strokeStyle = "#2CAD78";
-        ctx.lineWidth = 2;
-        ctx.strokeRect(storeBounds.x + 60, storeBounds.y - 2, 140, 4);
+        if (arch.topWallMaterial === 'glass') {
+            // En fachada vitrina la puerta ya está dibujada como concreto dentro del vidrio
+            // Solo dibujar el marco/label de la entrada
+            ctx.strokeStyle = "#2CAD78";
+            ctx.lineWidth = 2;
+            ctx.strokeRect(storeBounds.x + 60, storeBounds.y - 2, 140, 4);
+        } else {
+            // Arquitectura convencional: limpiar el gap y dibujar marco
+            ctx.clearRect(storeBounds.x + 60, storeBounds.y - storeBounds.wallThickness, 140, storeBounds.wallThickness + 2);
+            ctx.strokeStyle = "#2CAD78";
+            ctx.lineWidth = 2;
+            ctx.strokeRect(storeBounds.x + 60, storeBounds.y - 2, 140, 4);
+        }
         ctx.fillStyle = "#2CAD78";
         ctx.font = "bold 10px sans-serif";
         ctx.fillText(entranceLabel, storeBounds.x + 130, storeBounds.y - 26);
@@ -840,6 +959,7 @@ const VecinaSimulator = (function() {
         updatePower: updatePower,
         clearElements: clearElements,
         loadPreset: loadPreset,
-        toggleAnimation: toggleAnimation
+        toggleAnimation: toggleAnimation,
+        setArchitecture: setArchitecture
     };
 })();
