@@ -1376,6 +1376,14 @@
                         </button>
                     </div>
                     <div class="tool-group">
+                        <label style="font-size: 12px; font-weight: 600; color: var(--text-muted);">Arquitectura:</label>
+                        <select id="architecture-select-red" onchange="ReduccionSimulator.setArchitecture(this.value)" style="padding: 6px 10px; border-radius: 6px; border: 1px solid #ccc; font-size: 12px;">
+                            <option value="convencional" selected>Tienda Convencional</option>
+                            <option value="fachada_vitrina">Fachada Vitrina</option>
+                        </select>
+                    </div>
+
+                    <div class="tool-group">
                         <label style="font-size: 12px; font-weight: 600; color: var(--text-muted);">Escenario:</label>
                         <select id="preset-select-red" onchange="ReduccionSimulator.loadPreset(this.value)" style="padding: 6px 10px; border-radius: 6px; border: 1px solid #ccc; font-size: 12px;">
                             <option value="empty">Tienda Vacía</option>
