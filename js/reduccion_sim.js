@@ -6,6 +6,8 @@ const ReduccionSimulator = (function() {
     var wavePhase = 0;
     var isDragging = false;
     var draggedPerson = null;
+    var draggedShelf = null;
+    var shelfDragOffset = { x: 0, y: 0 };
     var isDraggingAntenna = false;
     var isDraggingCashier = false;
     var cashierDragOffset = { x: 0, y: 0 };
@@ -1007,6 +1009,16 @@ const ReduccionSimulator = (function() {
             }
             var hit = people.findIndex(function(p) { return Math.hypot(p.x - pos.x, p.y - pos.y) < 16; });
             if (hit !== -1) { draggedPerson = hit; isDragging = true; return; }
+            // Detectar click sobre anaquel existente para arrastrar
+            var shelfHit = shelves.findIndex(function(s) {
+                return pos.x >= s.x && pos.x <= s.x + s.w && pos.y >= s.y && pos.y <= s.y + s.h;
+            });
+            if (shelfHit !== -1) {
+                draggedShelf = shelfHit;
+                shelfDragOffset = { x: pos.x - shelves[shelfHit].x, y: pos.y - shelves[shelfHit].y };
+                isDragging = true;
+                return;
+            }
             if (mode === 'person') people.push({x: pos.x, y: pos.y});
             else if (mode === 'shelf') shelves.push({x: pos.x - 40, y: pos.y - 15, w: 80, h: 30});
         };
@@ -1020,8 +1032,12 @@ const ReduccionSimulator = (function() {
                 return;
             }
             if (isDragging && draggedPerson !== null) { people[draggedPerson].x = pos.x; people[draggedPerson].y = pos.y; }
+            if (isDragging && draggedShelf !== null) {
+                shelves[draggedShelf].x = pos.x - shelfDragOffset.x;
+                shelves[draggedShelf].y = pos.y - shelfDragOffset.y;
+            }
         };
-        var handleUp = function() { isDragging = false; draggedPerson = null; isDraggingAntenna = false; isDraggingCashier = false; };
+        var handleUp = function() { isDragging = false; draggedPerson = null; draggedShelf = null; isDraggingAntenna = false; isDraggingCashier = false; };
 
         canvas.addEventListener('mousedown', handleDown);
         canvas.addEventListener('mousemove', handleMove);
