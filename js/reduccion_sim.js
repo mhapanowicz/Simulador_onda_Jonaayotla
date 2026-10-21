@@ -1026,6 +1026,17 @@ const ReduccionSimulator = (function() {
         canvas.addEventListener('mousedown', handleDown);
         canvas.addEventListener('mousemove', handleMove);
         canvas.addEventListener('mouseup', handleUp);
+        canvas.addEventListener('dblclick', function(e) {
+            var pos = getPos(e);
+            // Eliminar persona con doble click
+            var personHit = people.findIndex(function(p) { return Math.hypot(p.x - pos.x, p.y - pos.y) < 16; });
+            if (personHit !== -1) { people.splice(personHit, 1); return; }
+            // Eliminar anaquel con doble click
+            var shelfHit = shelves.findIndex(function(s) {
+                return pos.x >= s.x && pos.x <= s.x + s.w && pos.y >= s.y && pos.y <= s.y + s.h;
+            });
+            if (shelfHit !== -1) { shelves.splice(shelfHit, 1); return; }
+        });
         canvas.addEventListener('touchstart', function(e) { e.preventDefault(); handleDown(e); }, {passive:false});
         canvas.addEventListener('touchmove', function(e) { e.preventDefault(); handleMove(e); }, {passive:false});
         canvas.addEventListener('touchend', handleUp);
