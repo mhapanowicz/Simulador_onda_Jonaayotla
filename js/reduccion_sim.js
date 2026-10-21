@@ -42,6 +42,41 @@ const ReduccionSimulator = (function() {
         { wall: 'top', start: 100, end: 240 }   // entrada principal (pared superior, 140px = 14m)
     ];
 
+    // === SISTEMA DE ARQUITECTURAS ===
+    var currentArchitecture = 'convencional';
+    var architectures = {
+        convencional: {
+            name: 'Tienda Convencional',
+            topWallMaterial: 'concrete', // pared superior de concreto con puerta abierta
+            windows: [
+                { wall: 'left',   start: 120, end: 220 },
+                { wall: 'bottom', start: 200, end: 340 }
+            ],
+            doors: [
+                { wall: 'top', start: 100, end: 240 }
+            ]
+        },
+        fachada_vitrina: {
+            name: 'Fachada Vitrina',
+            topWallMaterial: 'glass', // pared superior toda de vidrio (8 dB) excepto puerta (gap, 0 dB)
+            windows: [
+                { wall: 'left',   start: 120, end: 220 },
+                { wall: 'bottom', start: 200, end: 340 }
+            ],
+            doors: [
+                { wall: 'top', start: 100, end: 240 }
+            ]
+        }
+    };
+
+    function setArchitecture(archId) {
+        var arch = architectures[archId];
+        if (!arch) return;
+        currentArchitecture = archId;
+        windows = arch.windows;
+        doors = arch.doors;
+    }
+
     // Potencias: 0-100 donde 100 = más sensible (ve más lejos)
     var paseantesPotencia = 85;
     var visitasPotencia = 75;
@@ -278,6 +313,8 @@ const ReduccionSimulator = (function() {
             var cx = ant.x + t3 * (tgt.x - ant.x);
             if (cx >= bounds.x && cx <= bounds.x + bounds.width) {
                 if (passesDoor(doors, 'top', cx)) return DOOR_ATTEN;
+                // Fachada Vitrina: pared superior es vidrio (8 dB)
+                if (architectures[currentArchitecture].topWallMaterial === 'glass') return WINDOW_ATTEN;
                 return passesWindow(wins, 'top', cx) ? WINDOW_ATTEN : WALL_ATTEN;
             }
         }
@@ -671,23 +708,54 @@ const ReduccionSimulator = (function() {
     }
 
     function drawWallsWithWindows(bounds, wins) {
+        var arch = architectures[currentArchitecture];
         // Paredes de concreto (color marrón)
         ctx.strokeStyle = '#8B7355';
         ctx.lineWidth = bounds.wallThickness;
 
-        // 4 paredes
-        ctx.beginPath();
-        ctx.moveTo(bounds.x - bounds.wallThickness/2, bounds.y);
-        ctx.lineTo(bounds.x + bounds.width + bounds.wallThickness/2, bounds.y);
-        ctx.stroke();
+        // --- PARED SUPERIOR ---
+        if (arch.topWallMaterial === 'glass') {
+            // Fachada Vitrina: toda la pared superior es vidrio excepto la puerta (gap)
+            var topDoors = doors.filter(function(d) { return d.wall === 'top'; });
+            var segments = [];
+            var lastX = bounds.x;
+            topDoors.forEach(function(d) {
+                if (d.start > lastX) segments.push({ start: lastX, end: d.start });
+                lastX = d.end;
+            });
+            if (lastX < bounds.x + bounds.width) segments.push({ start: lastX, end: bounds.x + bounds.width });
+            segments.forEach(function(seg) {
+                ctx.fillStyle = 'rgba(135,206,235,0.6)';
+                ctx.fillRect(seg.start, bounds.y - bounds.wallThickness/2, seg.end - seg.start, bounds.wallThickness);
+                ctx.strokeStyle = '#5DADE2'; ctx.lineWidth = 1.5;
+                ctx.strokeRect(seg.start, bounds.y - bounds.wallThickness/2, seg.end - seg.start, bounds.wallThickness);
+            });
+            ctx.fillStyle = '#2980B9'; ctx.font = 'bold 8px sans-serif'; ctx.textAlign = 'center';
+            segments.forEach(function(seg) {
+                if (seg.end - seg.start > 50) {
+                    ctx.fillText('FACHADA VITRINA', (seg.start + seg.end) / 2, bounds.y - bounds.wallThickness/2 - 6);
+                }
+            });
+        } else {
+            // Concreto normal
+            ctx.beginPath();
+            ctx.moveTo(bounds.x - bounds.wallThickness/2, bounds.y);
+            ctx.lineTo(bounds.x + bounds.width + bounds.wallThickness/2, bounds.y);
+            ctx.stroke();
+        }
+
+        // --- PARED INFERIOR ---
+        ctx.strokeStyle = '#8B7355'; ctx.lineWidth = bounds.wallThickness;
         ctx.beginPath();
         ctx.moveTo(bounds.x - bounds.wallThickness/2, bounds.y + bounds.height);
         ctx.lineTo(bounds.x + bounds.width + bounds.wallThickness/2, bounds.y + bounds.height);
         ctx.stroke();
+        // --- PARED IZQUIERDA ---
         ctx.beginPath();
         ctx.moveTo(bounds.x, bounds.y - bounds.wallThickness/2);
         ctx.lineTo(bounds.x, bounds.y + bounds.height + bounds.wallThickness/2);
         ctx.stroke();
+        // --- PARED DERECHA ---
         ctx.beginPath();
         ctx.moveTo(bounds.x + bounds.width, bounds.y - bounds.wallThickness/2);
         ctx.lineTo(bounds.x + bounds.width, bounds.y + bounds.height + bounds.wallThickness/2);
@@ -695,11 +763,17 @@ const ReduccionSimulator = (function() {
 
         // Textura de concreto
         ctx.strokeStyle = '#6B5B45'; ctx.lineWidth = 1;
+        // Pared superior — solo textura si NO es fachada vitrina
+        if (arch.topWallMaterial !== 'glass') {
         for (var x = bounds.x; x < bounds.x + bounds.width; x += 8) {
             ctx.beginPath(); ctx.moveTo(x, bounds.y - bounds.wallThickness/2);
             ctx.lineTo(x + 8, bounds.y + bounds.wallThickness/2); ctx.stroke();
-            ctx.beginPath(); ctx.moveTo(x, bounds.y + bounds.height - bounds.wallThickness/2);
-            ctx.lineTo(x + 8, bounds.y + bounds.height + bounds.wallThickness/2); ctx.stroke();
+        }
+        }
+        // Pared inferior
+        for (var x2 = bounds.x; x2 < bounds.x + bounds.width; x2 += 8) {
+            ctx.beginPath(); ctx.moveTo(x2, bounds.y + bounds.height - bounds.wallThickness/2);
+            ctx.lineTo(x2 + 8, bounds.y + bounds.height + bounds.wallThickness/2); ctx.stroke();
         }
         for (var y = bounds.y; y < bounds.y + bounds.height; y += 8) {
             ctx.beginPath(); ctx.moveTo(bounds.x - bounds.wallThickness/2, y);
@@ -844,6 +918,6 @@ const ReduccionSimulator = (function() {
         initSim: initSim, setMode: setMode, updatePaseantes: updatePaseantes,
         updateVisitas: updateVisitas, updateClima: updateClima, updateTemperatura: updateTemperatura,
         clearElements: clearElements, loadPreset: loadPreset, toggleAnimation: toggleAnimation,
-        toggleZoom: toggleZoom
+        toggleZoom: toggleZoom, setArchitecture: setArchitecture
     };
 })();
