@@ -66,6 +66,17 @@ const ReduccionSimulator = (function() {
             doors: [
                 { wall: 'top', start: 100, end: 240 }
             ]
+        },
+        fachada_abierta: {
+            name: 'Fachada Abierta',
+            topWallMaterial: 'open', // pared superior toda abierta (0 dB)
+            windows: [
+                { wall: 'left',   start: 120, end: 220 },
+                { wall: 'bottom', start: 200, end: 340 }
+            ],
+            doors: [
+                { wall: 'top', start: 40, end: 760 } // entrada abarca toda la fachada
+            ]
         }
     };
 
@@ -313,8 +324,10 @@ const ReduccionSimulator = (function() {
             var cx = ant.x + t3 * (tgt.x - ant.x);
             if (cx >= bounds.x && cx <= bounds.x + bounds.width) {
                 if (passesDoor(doors, 'top', cx)) return DOOR_ATTEN;
-                // Fachada Vitrina: pared superior es vidrio (8 dB)
-                if (architectures[currentArchitecture].topWallMaterial === 'glass') return WINDOW_ATTEN;
+                // Fachada Vitrina: vidrio (8 dB). Fachada Abierta: todo abierto (0 dB)
+                var topMat = architectures[currentArchitecture].topWallMaterial;
+                if (topMat === 'glass') return WINDOW_ATTEN;
+                if (topMat === 'open') return 0;
                 return passesWindow(wins, 'top', cx) ? WINDOW_ATTEN : WALL_ATTEN;
             }
         }
@@ -736,6 +749,12 @@ const ReduccionSimulator = (function() {
                     ctx.fillText('FACHADA VITRINA', (seg.start + seg.end) / 2, bounds.y - bounds.wallThickness/2 - 6);
                 }
             });
+        } else if (arch.topWallMaterial === 'open') {
+            // Fachada Abierta: toda la pared superior es entrada (gap) — no dibujar pared
+            ctx.strokeStyle = '#2CAD78'; ctx.lineWidth = 3;
+            ctx.beginPath(); ctx.moveTo(bounds.x, bounds.y - 2); ctx.lineTo(bounds.x + bounds.width, bounds.y - 2); ctx.stroke();
+            ctx.fillStyle = '#2CAD78'; ctx.font = 'bold 10px sans-serif'; ctx.textAlign = 'center';
+            ctx.fillText('ENTRADA ABIERTA', bounds.x + bounds.width/2, bounds.y - 8);
         } else {
             // Concreto normal
             ctx.beginPath();
@@ -763,8 +782,8 @@ const ReduccionSimulator = (function() {
 
         // Textura de concreto
         ctx.strokeStyle = '#6B5B45'; ctx.lineWidth = 1;
-        // Pared superior — solo textura si NO es fachada vitrina
-        if (arch.topWallMaterial !== 'glass') {
+        // Pared superior — solo textura si es concreto
+        if (arch.topWallMaterial === 'concrete') {
         for (var x = bounds.x; x < bounds.x + bounds.width; x += 8) {
             ctx.beginPath(); ctx.moveTo(x, bounds.y - bounds.wallThickness/2);
             ctx.lineTo(x + 8, bounds.y + bounds.wallThickness/2); ctx.stroke();
@@ -821,6 +840,8 @@ const ReduccionSimulator = (function() {
         doors.forEach(function(door) {
             ctx.save();
             if (door.wall === 'top') {
+                // En fachada_abierta la pared superior ya se dibujó como entrada abierta
+                if (architectures[currentArchitecture].topWallMaterial === 'open') { ctx.restore(); return; }
                 ctx.clearRect(door.start, bounds.y - bounds.wallThickness/2 - 1, door.end - door.start, bounds.wallThickness + 2);
                 ctx.strokeStyle = '#2CAD78'; ctx.lineWidth = 3;
                 ctx.beginPath(); ctx.moveTo(door.start, bounds.y - 2); ctx.lineTo(door.end, bounds.y - 2); ctx.stroke();
