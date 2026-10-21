@@ -14,6 +14,11 @@ const ReduccionSimulator = (function() {
     var zoomLevel = 1; // 1 = normal, 0.5 = vista amplia
     var ZOOM_NORMAL = 1;
     var ZOOM_WIDE = 0.5;
+    var ZOOM_MIN = 0.3;
+    var ZOOM_MAX = 1.5;
+    // Pan: desplazamiento del zoom (para centrar donde se hizo zoom)
+    var panX = 0;
+    var panY = 0;
 
     // === TIENDA IDÉNTICA AL RF SIMULATOR ===
     // Canvas: 900x600. Tienda: 720x440 en (40,40). Antena: (700,440).
@@ -97,9 +102,21 @@ const ReduccionSimulator = (function() {
 
     function toggleZoom() {
         zoomLevel = (zoomLevel === ZOOM_NORMAL) ? ZOOM_WIDE : ZOOM_NORMAL;
+        // Reset pan al cambiar de modo
+        panX = 0;
+        panY = 0;
         var btn = document.getElementById('btn-red-zoom');
         if (btn) {
             btn.innerHTML = (zoomLevel === ZOOM_WIDE) ? '\ud83d\udd0d Vista Normal' : '\ud83d\udd0d Vista Amplia';
+        }
+    }
+
+    function setZoom(newZoom, centerX, centerY) {
+        newZoom = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, newZoom));
+        zoomLevel = newZoom;
+        var btn = document.getElementById('btn-red-zoom');
+        if (btn) {
+            btn.innerHTML = (Math.abs(zoomLevel - 1) < 0.01) ? '\ud83d\udd0d Vista Amplia' : '\ud83d\udd0d Vista Normal';
         }
     }
 
@@ -887,7 +904,18 @@ const ReduccionSimulator = (function() {
             var sx = canvas.width / rect.width, sy = canvas.height / rect.height;
             var cx = e.touches ? e.touches[0].clientX : e.clientX;
             var cy = e.touches ? e.touches[0].clientY : e.clientY;
-            return { x: (cx - rect.left) * sx, y: (cy - rect.top) * sy };
+            // Coordenada en el canvas sin transformación
+            var rawX = (cx - rect.left) * sx;
+            var rawY = (cy - rect.top) * sy;
+            // Deshacer la transformación de zoom (igual que en drawSim)
+            if (zoomLevel !== 1) {
+                var storeCx = storeBounds.x + storeBounds.width / 2;
+                var storeCy = storeBounds.y + storeBounds.height / 2;
+                // Inverso de: translate(w/2,h/2) -> scale(z) -> translate(-cx,-cy)
+                rawX = (rawX - canvas.width / 2) / zoomLevel + storeCx;
+                rawY = (rawY - canvas.height / 2) / zoomLevel + storeCy;
+            }
+            return { x: rawX, y: rawY };
         };
         var handleDown = function(e) {
             var pos = getPos(e);
@@ -933,6 +961,20 @@ const ReduccionSimulator = (function() {
         canvas.addEventListener('touchstart', function(e) { e.preventDefault(); handleDown(e); }, {passive:false});
         canvas.addEventListener('touchmove', function(e) { e.preventDefault(); handleMove(e); }, {passive:false});
         canvas.addEventListener('touchend', handleUp);
+
+        // Zoom con rueda del mouse
+        canvas.addEventListener('wheel', function(e) {
+            e.preventDefault();
+            var delta = e.deltaY > 0 ? 0.9 : 1.1;
+            setZoom(zoomLevel * delta);
+        }, { passive: false });
+
+        // Cursor del canvas según zoom
+        canvas.style.cursor = zoomLevel !== 1 ? 'zoom-out' : 'zoom-in';
+        // Actualizar cursor dinamicamente
+        canvas.addEventListener('mouseenter', function() {
+            canvas.style.cursor = Math.abs(zoomLevel - 1) < 0.01 ? 'zoom-in' : 'zoom-out';
+        });
     }
 
     return {
