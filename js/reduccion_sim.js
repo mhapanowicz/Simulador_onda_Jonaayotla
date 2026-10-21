@@ -19,6 +19,9 @@ const ReduccionSimulator = (function() {
     // Pan: desplazamiento del zoom (para centrar donde se hizo zoom)
     var panX = 0;
     var panY = 0;
+    // Rects de los botones +/- para detección de clicks
+    var zoomBtnPlusRect = null;
+    var zoomBtnMinusRect = null;
 
     // === TIENDA IDÉNTICA AL RF SIMULATOR ===
     // Canvas: 900x600. Tienda: 720x440 en (40,40). Antena: (700,440).
@@ -521,7 +524,7 @@ const ReduccionSimulator = (function() {
 
         // Aplicar zoom: centrar en la tienda, escalar
         ctx.save();
-        if (zoomLevel < 1) {
+        if (zoomLevel !== 1) {
             var cx = storeBounds.x + storeBounds.width / 2;
             var cy = storeBounds.y + storeBounds.height / 2;
             ctx.translate(canvas.width / 2, canvas.height / 2);
@@ -548,8 +551,8 @@ const ReduccionSimulator = (function() {
         // En vista amplia, calcular el area visible segun zoom
         var heatW = canvas.width / zoomLevel;
         var heatH = canvas.height / zoomLevel;
-        var heatOffsetX = zoomLevel < 1 ? (storeBounds.x + storeBounds.width/2) - heatW/2 : 0;
-        var heatOffsetY = zoomLevel < 1 ? (storeBounds.y + storeBounds.height/2) - heatH/2 : 0;
+        var heatOffsetX = zoomLevel !== 1 ? (storeBounds.x + storeBounds.width/2) - heatW/2 : 0;
+        var heatOffsetY = zoomLevel !== 1 ? (storeBounds.y + storeBounds.height/2) - heatH/2 : 0;
         var gridSize = 20;
         for (var x = heatOffsetX; x < heatOffsetX + heatW; x += gridSize) {
             for (var y = heatOffsetY; y < heatOffsetY + heatH; y += gridSize) {
@@ -719,6 +722,52 @@ const ReduccionSimulator = (function() {
         });
 
         ctx.restore(); // fin zoom
+
+        // === CONTROLES DE ZOOM EN ESQUINA DEL CANVAS ===
+        var zoomBtnSize = 28;
+        var zoomBtnX = canvas.width - zoomBtnSize - 10;
+        var zoomBtnY = 10;
+        var zoomPct = Math.round(zoomLevel * 100);
+
+        // Fondo del control
+        ctx.fillStyle = 'rgba(255,255,255,0.9)';
+        ctx.strokeStyle = '#ccc';
+        ctx.lineWidth = 1;
+        ctx.fillRect(zoomBtnX - 8, zoomBtnY - 2, zoomBtnSize + 16, zoomBtnSize * 2 + 8);
+        ctx.strokeRect(zoomBtnX - 8, zoomBtnY - 2, zoomBtnSize + 16, zoomBtnSize * 2 + 8);
+
+        // Botón +
+        ctx.fillStyle = (zoomLevel >= ZOOM_MAX) ? '#eee' : '#2CAD78';
+        ctx.fillRect(zoomBtnX, zoomBtnY, zoomBtnSize, zoomBtnSize);
+        ctx.strokeStyle = '#1E8A5C';
+        ctx.strokeRect(zoomBtnX, zoomBtnY, zoomBtnSize, zoomBtnSize);
+        ctx.fillStyle = '#fff';
+        ctx.font = 'bold 18px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('+', zoomBtnX + zoomBtnSize/2, zoomBtnY + zoomBtnSize/2 + 1);
+
+        // Botón -
+        ctx.fillStyle = (zoomLevel <= ZOOM_MIN) ? '#eee' : '#E74C3C';
+        ctx.fillRect(zoomBtnX, zoomBtnY + zoomBtnSize + 4, zoomBtnSize, zoomBtnSize);
+        ctx.strokeStyle = '#C0392B';
+        ctx.strokeRect(zoomBtnX, zoomBtnY + zoomBtnSize + 4, zoomBtnSize, zoomBtnSize);
+        ctx.fillStyle = '#fff';
+        ctx.fillText('–', zoomBtnX + zoomBtnSize/2, zoomBtnY + zoomBtnSize + 4 + zoomBtnSize/2 + 1);
+
+        // Porcentaje de zoom
+        ctx.fillStyle = '#555';
+        ctx.font = 'bold 10px sans-serif';
+        ctx.textAlign = 'right';
+        ctx.textBaseline = 'alphabetic';
+        ctx.fillText(zoomPct + '%', canvas.width - 12, canvas.height - 12);
+
+        // Reset textBaseline
+        ctx.textBaseline = 'alphabetic';
+
+        // Guardar coords de los botones para detección de clicks
+        zoomBtnPlusRect = { x: zoomBtnX, y: zoomBtnY, w: zoomBtnSize, h: zoomBtnSize };
+        zoomBtnMinusRect = { x: zoomBtnX, y: zoomBtnY + zoomBtnSize + 4, w: zoomBtnSize, h: zoomBtnSize };
 
         // Métricas
         var mR = document.getElementById('red-metric-raw');
@@ -919,6 +968,25 @@ const ReduccionSimulator = (function() {
         };
         var handleDown = function(e) {
             var pos = getPos(e);
+            // === DETECTAR CLICKS EN BOTONES DE ZOOM ===
+            // Los botones se dibujan en coords de pantalla (sin zoom),
+            // así que necesitamos coords raw del canvas
+            var rect2 = canvas.getBoundingClientRect();
+            var sx2 = canvas.width / rect2.width;
+            var sy2 = canvas.height / rect2.height;
+            var rawClickX = ((e.touches ? e.touches[0].clientX : e.clientX) - rect2.left) * sx2;
+            var rawClickY = ((e.touches ? e.touches[0].clientY : e.clientY) - rect2.top) * sy2;
+            if (zoomBtnPlusRect && rawClickX >= zoomBtnPlusRect.x && rawClickX <= zoomBtnPlusRect.x + zoomBtnPlusRect.w &&
+                rawClickY >= zoomBtnPlusRect.y && rawClickY <= zoomBtnPlusRect.y + zoomBtnPlusRect.h) {
+                setZoom(zoomLevel * 1.2);
+                return;
+            }
+            if (zoomBtnMinusRect && rawClickX >= zoomBtnMinusRect.x && rawClickX <= zoomBtnMinusRect.x + zoomBtnMinusRect.w &&
+                rawClickY >= zoomBtnMinusRect.y && rawClickY <= zoomBtnMinusRect.y + zoomBtnMinusRect.h) {
+                setZoom(zoomLevel / 1.2);
+                return;
+            }
+
             if (mode === 'antenna') {
                 if (Math.hypot(pos.x - antenna.x, pos.y - antenna.y) < 20) isDraggingAntenna = true;
                 else { antenna.x = pos.x; antenna.y = pos.y; }
